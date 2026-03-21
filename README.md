@@ -156,7 +156,7 @@ frontend/
 │  │  ├─ Header.jsx
 │  │  └─ PostCard.jsx
 │  ├─ pages/
-│  │  ├─ PostsFeed.jsx 
+│  │  ├─ Dashboard.jsx 
 │  │  └─ CreatePost.jsx
 │  ├─ services/
 │  │  ├─ auth.js
