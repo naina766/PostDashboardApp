@@ -1,8 +1,6 @@
-# Scalable Web App with Authentication & Dashboard
+# Post Management Web App with Authentication
 
-A full-stack web application built as part of the **Frontend Developer Intern Assignment**.  
-The project focuses on a modern frontend with a secure, scalable backend supporting authentication and dashboard-based CRUD operations.
-
+A full-stack post management web app with JWT authentication, CRUD operations, image upload, and user profiles.
 ---
 
 ## 🚀 Tech Stack
@@ -40,12 +38,13 @@ The project focuses on a modern frontend with a secure, scalable backend support
 - JWT-based authentication
 - Protected routes
 - Secure password hashing
+- Logout functionality
 
-### Dashboard
-- User profile display
+### Posts Feed
+- User profile page with editable info
 - Create, read, update & delete posts
 - Search & filter posts
-- Logout functionality
+-
 
 ### Posts Management
 - Create posts from dashboard
@@ -157,7 +156,7 @@ frontend/
 │  │  ├─ Header.jsx
 │  │  └─ PostCard.jsx
 │  ├─ pages/
-│  │  ├─ Dashboard.jsx
+│  │  ├─ PostsFeed.jsx 
 │  │  └─ CreatePost.jsx
 │  ├─ services/
 │  │  ├─ auth.js
