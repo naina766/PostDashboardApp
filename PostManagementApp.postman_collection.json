@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "4acc4dba-5971-40ce-9635-dc65372c0cd9",
-		"name": "PostHub 2.0 API Collection",
-		"description": "Production-grade social community platform endpoints for PostHub 2.0.",
+		"name": "PostHub 3.0 API Collection",
+		"description": "Enterprise-style social community platform endpoints for PostHub 3.0.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -54,6 +54,36 @@
 							"raw": "{\n  \"email\": \"alex@example.com\",\n  \"password\": \"Password123!\"\n}"
 						},
 						"url": "{{Base_url}}/api/auth/login"
+					}
+				},
+				{
+					"name": "Refresh Token Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": "{{Base_url}}/api/auth/refresh"
+					}
+				},
+				{
+					"name": "Logout All Sessions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/auth/logout-all"
 					}
 				}
 			]

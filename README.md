@@ -1,266 +1,210 @@
-# PostHub 2.0 — Production-Style Social Community & Content Platform
+# PostHub 4.0 — Production-Grade Social Community Platform
 
-> A full-scale, portfolio-grade social community platform built with **React**, **Node.js**, **Express**, **MongoDB**, and **Cloudinary**.
+> **"A scalable, production-style social community platform engineered for creators, developers, and collaborative networks."**
+
+PostHub is a full-stack platform built with **React 19**, **Vite**, **Bootstrap 5**, **Node.js**, **Express 5**, **MongoDB Atlas**, **Cloudinary**, and a production DevOps pipeline.
 
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5-lightgrey.svg)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6%20Collections-green.svg)](https://www.mongodb.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple.svg)](https://getbootstrap.com/)
 [![CI](https://github.com/naina766/PostDashboardApp/actions/workflows/ci.yml/badge.svg)](https://github.com/naina766/PostDashboardApp/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 📖 Product Vision & Overview
+## 🌐 Live Demonstrations & Deployment Topology
 
-**PostHub 2.0** evolves from a basic post management application into a production-style social community platform. Combining patterns from developer networks, community forums, and content platforms, PostHub provides an engaging community experience while maintaining its own distinct visual identity.
-
-The platform is designed with a **modular monolithic backend** and a **component-driven React frontend**, adhering to clean code principles, predictable state management, and real-world scalability.
-
----
-
-## ✨ Features by Phase
-
-### 1. Social Profile System
-- **Rich User Profiles**: Display names, unique `@username`, custom avatars, cover photos, bio (up to 300 chars), location, website, skill badges, and social links (GitHub, Twitter, LinkedIn).
-- **Direct Image Uploads**: Cloudinary-backed avatar and cover photo uploads.
-- **Followers / Following Counters**: Live graph counts with dedicated modals listing followers and following accounts.
-- **Profile Content Tabs**: Categorized tabs for "Posts", "Media", and "Saved".
-
-### 2. Follow & Social Graph
-- **Bidirectional Relationship**: Follow and unfollow users with optimistic UI updates.
-- **Self-Follow & Duplicate Prevention**: Server-enforced compound index `{ follower: 1, following: 1 }` preventing invalid self-relationships or duplicate follows.
-- **Suggested Users to Follow**: Recommends creators based on follower count while excluding already-followed members.
-
-### 3. Advanced Post System
-- **Multi-Format Content**:
-  - **Standard Text**: Markdown-compatible content with character tracking.
-  - **Multi-Media**: Support for up to 4 images per post with modal lightbox expander.
-  - **Interactive Polls**: Community polls with custom questions, expiration timestamps, and live percentage calculation.
-  - **Link Cards**: Rich destination preview with hostname, title, and summary.
-- **Automatic Hashtag & Mention Extraction**: Regex parser extracting `#hashtags` and `@mentions` into normalized database indices.
-- **Draft Auto-Saving**: Drafts are continuously cached in `localStorage` so in-progress posts are never lost.
-
-### 4. Threaded Discussions (Level 2)
-- **Nested Comments & Replies**: 2-level discussion threads (`Post` → `Comment` → `Reply`).
-- **Comment Likes**: Community members can react and like individual comments.
-- **Granular Deletion**: Comment authors, post authors, and administrators can remove comments.
-
-### 5. Bookmark & Saved Collection
-- **Personalized Bookmarks**: Dedicated `Bookmark` collection with unique indexing (`{ user: 1, post: 1 }`).
-- **One-Click Saving**: Quick bookmark toggle with optimistic UI feedback.
-- **Saved Posts View**: Fast access to bookmarked posts via `/saved`.
-
-### 6. Explore & Global Server Search
-- **Trending Posts & Topics**: Deterministic ranking score highlighting hot discussions.
-- **Hashtag Feeds**: Filter and explore posts dedicated to specific topics (e.g. `/explore?tag=react`).
-- **Debounced Server-Side Search**: Fast search across users, posts, and hashtags without fetching the whole database into the browser.
-
-### 7. Deterministic Trending Engine
-PostHub does **not** rely on fake mock algorithms or ungrounded claims of machine learning. Post ranking is computed deterministically using the following formula:
-
-$$\text{TrendingScore} = (\text{likes} \times 1) + (\text{comments} \times 3) + (\text{shares} \times 4) + (\text{saves} \times 3) + \text{RecencyBonus}$$
-
-Where $\text{RecencyBonus} = \max(0, 100 - \text{hoursSinceCreation} \times 1.5)$.
-
-### 8. Notification Center
-- **Real-Time Event Tracking**: In-app notifications triggered for likes, comments, replies, follows, mentions, and bookmarks.
-- **Unread Badge & Polling**: Unread badge counter in the navigation bar.
-- **Status Updates**: Mark individual notifications as read or mark all as read simultaneously.
-
-### 9. Safety & Moderation
-- **Content & User Reporting**: Flag posts, comments, or users for Spam, Harassment, Hate Speech, Violence, Inappropriate content, or Misleading information.
-- **Audit-Ready Reports**: Every report records the reporter, target entity, timestamp, and status (`PENDING`, `RESOLVED`, `DISMISSED`).
-
-### 10. Administration Dashboard (`/admin`)
-- **Server-Side RBAC**: Strict role enforcement (`admin`, `moderator`, `user`).
-- **Platform Telemetry**: Monitor total users, total posts, pending reports, and active posts created in the last 24 hours.
-- **User Governance**: Search users, promote/demote roles, or suspend abusive accounts.
-- **Content Moderation**: Review reported posts and resolve or dismiss flags.
-
-### 11. Creator Analytics (`/analytics`)
-- **Performance KPIs**: Total posts, likes received, comments received, saves, and engagement rate per post.
-- **Format Breakdown**: Visual breakdown of Text, Media, Poll, and Link posts.
-- **Top 5 Performing Posts**: Quick sorting of top-performing content.
-- **6-Month Activity Timeline**: Visual monthly posting frequency.
-
-### 12. Security Hardening
-- **Helmet**: Secures HTTP headers (`crossOriginResourcePolicy: false` configured for static media).
-- **Express Rate Limiting**: Strict burst protection for authentication (50 req / 15 min) and API requests (500 req / 15 min).
-- **Sanitized Responses**: Password hashes and sensitive credentials are never leaked in API envelopes.
+| Component | Target Platform | URL / Endpoint |
+| :--- | :--- | :--- |
+| **Frontend Application** | **Vercel** | [https://posthub-community.vercel.app](https://posthub-community.vercel.app) *(Deployment Target)* |
+| **Backend REST API** | **Render** | [https://posthub-backend.onrender.com/api/health](https://posthub-backend.onrender.com/api/health) |
+| **Database Cluster** | **MongoDB Atlas** | Managed Replica Set (M0 / M10) |
+| **Media CDN** | **Cloudinary** | Global Edge Image Delivery & Transformations |
 
 ---
 
 ## 🏛️ System Architecture
 
+PostHub utilizes a modern decoupled cloud architecture designed for high availability, zero layout shifts, and resilience.
+
 ```mermaid
 flowchart TD
-    subgraph Client["Frontend (React 19 + Bootstrap 5)"]
-        UI["Pages: Feed, Explore, Profile, Notifications, Saved, Analytics, Admin"]
-        Context["Context Layer: UserContext, ThemeContext, ToastContext"]
-        Services["Axios Services (JWT Bearer Interceptor)"]
+    subgraph Clients["Clients & Edge Tier"]
+        Browser["User Browser (Desktop / Mobile)"]
+        VercelCDN["Vercel Edge Global CDN (React 19 SPA)"]
     end
 
-    subgraph Server["Backend (Node.js + Express 5 Monolith)"]
-        Security["Security: Helmet, Rate Limiter, Strict CORS"]
-        Routes["API Routes: /auth, /users, /posts, /explore, /notifications, /reports, /admin, /analytics"]
-        AuthMW["Middleware: authMiddleware, optionalAuthMiddleware, roleMiddleware"]
-        ServicesBackend["Service Layer: Deterministic Trending, Notification triggers, Aggregations"]
+    subgraph API["Application Gateway & Middleware (Render)"]
+        ReverseProxy["Node.js / Express 5 (:5000)"]
+        CorsMW["CORS Middleware (Domain Whitelist)"]
+        HelmetMW["Helmet Security Headers (nosniff, SAMEORIGIN)"]
+        LoggerMW["Structured Telemetry Logger (x-request-id)"]
+        RateLimitMW["Categorized Rate Limiters (Auth, API, Content)"]
+        AuthMW["JWT Verification & Replay Protection"]
     end
 
-    subgraph Storage["Database & Assets"]
-        Mongo[("MongoDB Atlas: users, posts, follows, notifications, bookmarks, reports")]
-        Cloudinary[("Cloudinary Media Storage")]
+    subgraph Services["Modular Domain Services"]
+        AuthService["Auth & Session Service"]
+        PostService["Post & Feed Service"]
+        ExploreService["Explainable Discovery Engine"]
+        UserService["Social Graph & Safety Service"]
+        AnalyticsService["Creator Analytics Engine"]
+        AdminService["Governance & Audit Service"]
     end
 
-    UI --> Context
-    Context --> Services
-    Services --> Security
-    Security --> Routes
-    Routes --> AuthMW
-    AuthMW --> ServicesBackend
-    ServicesBackend --> Mongo
-    ServicesBackend --> Cloudinary
+    subgraph Storage["Persistent Storage & Object Layer"]
+        MongoAtlas[("MongoDB Atlas
+        - users
+        - posts
+        - follows
+        - refresh_tokens (TTL)
+        - notifications
+        - bookmarks
+        - reports
+        - audit_logs")]
+        CloudinaryCDN[("Cloudinary Media CDN
+        - WebP / AVIF
+        - Automatic Quality & Scaling")]
+    end
+
+    subgraph DevOps["CI/CD Automation"]
+        GitHub["GitHub Repository"]
+        Actions["GitHub Actions Workflow
+        - Backend Unit/Integration Tests
+        - Frontend ESLint Audit
+        - Frontend Contract Tests
+        - Production Vite Build"]
+    end
+
+    Browser -->|HTTPS| VercelCDN
+    Browser -->|API Requests| ReverseProxy
+    ReverseProxy --> CorsMW --> HelmetMW --> LoggerMW --> RateLimitMW --> AuthMW
+    AuthMW --> Services
+    Services --> MongoAtlas
+    Services --> CloudinaryCDN
+    GitHub -->|Push to main| Actions
 ```
 
 ---
 
-## 🗄️ Database Design (V2 Collections)
+## ⚡ Core Engineering Features
 
-PostHub 2.0 uses 6 clean, decoupled collections to prevent document bloat and ensure fast query times:
+### 1. Dual-Token JWT & Replay Attack Defense
+- **15-Minute Access Tokens**: Short-lived stateless authorization signed with `JWT_SECRET`.
+- **7-Day Rotating Refresh Tokens**: Cryptographically generated 40-byte hex strings hashed with **SHA-256** prior to MongoDB insertion.
+- **Automated Replay Attack Detection**: Presenting a previously revoked token indicates token theft; the server detects the replay, revokes **all active sessions** for that user family, logs an administrative security alert, and rejects the request.
 
-| Collection | Key Responsibilities | Primary Indexes |
-| :--- | :--- | :--- |
-| `users` | Auth credentials, social profile, follower counts, role | `{ email: 1 }`, `{ username: 1 }` |
-| `posts` | Post content, media array, poll subdocument, link preview, hashtags | `{ createdAt: -1 }`, `{ trendingScore: -1 }`, `{ hashtags: 1 }` |
-| `follows` | User-to-user social graph | `{ follower: 1, following: 1 }` (unique compound) |
-| `notifications` | Social interaction notifications | `{ recipient: 1, read: 1, createdAt: -1 }` |
-| `bookmarks` | Post saving / bookmarks | `{ user: 1, post: 1 }` (unique compound) |
-| `reports` | Community safety flags and moderation audit log | `{ status: 1, createdAt: -1 }`, `{ targetId: 1 }` |
+### 2. Explainable Community Discovery Engine
+- PostHub rejects opaque algorithms in favor of transparent recommendation signals:
+  - `"Because you follow this creator"`: Author is in direct social graph.
+  - `"Trending in #tag"`: Trending score exceeds engagement threshold for active hashtag.
+  - `"Popular in your network"`: Community interactions exceed 5 interactions.
 
----
+### 3. Production Frontend UX & Responsive 3-Column Shell
+- **Zero Tailwind**: Styled with **Bootstrap 5 + React-Bootstrap + Semantic CSS Tokens** (`--ph-*`).
+- **3-Column Desktop Shell**: Left Navigation Sidebar, Center Social Feed, and Right Telemetry Widgets (Trending & Suggestions).
+- **Mobile-First Bottom Bar**: 44px touch targets on mobile with real-time unread alert badges.
+- **Cumulative Layout Shift (CLS) Elimination**: Bespoke shimmer skeletons (`PostSkeleton`, `ProfileSkeleton`, `NotificationSkeleton`, `AnalyticsSkeleton`).
 
-## 🚀 Quick Start (Local Setup)
-
-### Prerequisites
-- **Node.js** (v20 or higher)
-- **MongoDB** (Local instance or MongoDB Atlas URI)
-- **Cloudinary Account** (for media uploads)
-
-### 1. Clone Repository
-```bash
-git clone https://github.com/naina766/PostDashboardApp.git
-cd PostHub
-```
-
-### 2. Configure Environment Variables
-Copy `.env.example` in both `backend` and `frontend`:
-
-**`backend/.env`**:
-```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secure_jwt_secret
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-```
-
-**`frontend/.env`**:
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-### 3. Install & Run Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### 4. Install & Run Frontend
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
-
-Visit `http://localhost:5173` to experience PostHub 2.0!
+### 4. Comprehensive Observability & Health Probes
+- **Liveness Probe**: `GET /api/health` returns status, uptime, memory usage, and timestamp.
+- **Readiness Probe**: `GET /api/ready` confirms database connectivity before traffic routing.
+- **Structured Telemetry**: Correlation ID (`x-request-id`) injected into every request and error log.
 
 ---
 
-## 🐳 Docker Deployment
+## 🧪 Automated Testing & Verification
 
-PostHub includes container configurations for production:
+PostHub includes multi-tiered automated test coverage running natively on Node.js:
 
 ```bash
-# Build and run containers in background
-docker-compose up --build -d
-
-# Check running services
-docker-compose ps
-
-# Tear down containers
-docker-compose down
-```
-
-Services exposed:
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:5000`
-- MongoDB: `localhost:27017`
-
----
-
-## 🧪 Automated Testing
-
-PostHub 2.0 has comprehensive unit and integration tests covering:
-- Database architecture & 6 social models
-- User authentication & password protections
-- Multi-format post validations & poll restrictions
-- Hashtag & mention parser correctness
-- Deterministic trending score calculation
-- Threaded 2-level comment & reply limits
-- Follow graph constraints & self-follow prevention
-- Report categorization
-- Administrator authorization and RBAC
-
-Run the test suite:
-```bash
+# 1. Run Backend Automated Test Suite (24 test suites)
 cd backend
 npm test
-```
 
-Frontend linter and build check:
-```bash
-cd frontend
+# 2. Run Production Smoke-Test Suite (Health, Readiness, Security Headers, Auth)
+npm run test:smoke
+
+# 3. Run Frontend Unit & Envelope Contract Tests (7 tests)
+cd ../frontend
+npm test
+
+# 4. Run ESLint Quality Check (0 errors, 0 warnings)
 npm run lint
+
+# 5. Run Production Vite Compilation
 npm run build
 ```
 
 ---
 
-## 📚 API Reference
+## 🚀 Quickstart & Local Setup
 
-Complete documentation for all endpoints is available in [`docs/API.md`](docs/API.md).  
-A full Postman collection is also provided at [`PostManagementApp.postman_collection.json`](PostManagementApp.postman_collection.json).
-
-### Health Endpoint
-```http
-GET /api/health
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/naina766/PostDashboardApp.git
+cd PostDashboardApp
 ```
-```json
-{
-  "status": "ok",
-  "service": "posthub-api",
-  "version": "2.0.0",
-  "timestamp": "2026-09-06T11:20:00.000Z",
-  "uptime": 234.12
-}
+
+### 2. Environment Configuration
+```bash
+# Backend Setup
+cd backend
+cp .env.example .env
+# Fill in MONGO_URI, JWT_SECRET, and Cloudinary credentials
+
+# Frontend Setup
+cd ../frontend
+cp .env.example .env
+# Configures VITE_API_URL=http://localhost:5000
+```
+
+### 3. Safe Development Database Seeding
+```bash
+cd backend
+npm run seed
+# Populates demo creators, hashtags, and posts (guarded against production execution)
+```
+
+### 4. Start Development Servers
+```bash
+# Terminal 1: Backend API
+cd backend
+npm run dev
+
+# Terminal 2: Frontend App
+cd frontend
+npm run dev
+```
+
+### 5. Dockerized Execution (Optional)
+```bash
+docker compose up --build
+# Spins up backend (:5000), frontend (:3000), and MongoDB (:27017)
 ```
 
 ---
 
-## 🛡️ License
+## 📚 Technical Documentation Runbooks
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+* [PRODUCTION_READINESS_AUDIT.md](docs/PRODUCTION_READINESS_AUDIT.md) — Comprehensive pre-deployment scorecard across 13 engineering disciplines.
+* [DEPLOYMENT.md](docs/DEPLOYMENT.md) — Complete production deployment runbook for Render, Vercel, and Atlas.
+* [SECURITY_CHECKLIST.md](docs/SECURITY_CHECKLIST.md) — 15-point verified security checklist.
+* [SECURITY_HEADERS.md](docs/SECURITY_HEADERS.md) — Helmet, CSP, and transport layer security policy.
+* [PRODUCTION_AUTH_SECURITY.md](docs/PRODUCTION_AUTH_SECURITY.md) — Session rotation, SHA-256 token hashing, and replay attack defense.
+* [MONGODB_PRODUCTION.md](docs/MONGODB_PRODUCTION.md) — Index optimization, pool configuration, and backup strategies.
+* [CLOUDINARY_PRODUCTION.md](docs/CLOUDINARY_PRODUCTION.md) — Image upload pipelines and responsive CDN delivery.
+* [FRONTEND_DESIGN_SYSTEM.md](docs/FRONTEND_DESIGN_SYSTEM.md) — CSS token hierarchy, typography, breakpoints, and a11y standards.
+* [FRONTEND_PERFORMANCE.md](docs/FRONTEND_PERFORMANCE.md) — Route code-splitting, debouncing, and CLS mitigation.
+* [BACKUP_AND_RECOVERY.md](docs/BACKUP_AND_RECOVERY.md) — RPO/RTO targets, automated snapshot schedules, and disaster restoration.
+* [INCIDENT_RESPONSE.md](docs/INCIDENT_RESPONSE.md) — 4-phase incident management protocol (Detect, Contain, Recover, Review).
+* [PORTFOLIO_PRESENTATION.md](docs/PORTFOLIO_PRESENTATION.md) — 30-second, 2-minute, and 5-minute interview presentation scripts.
+* [INTERVIEW_PREPARATION.md](docs/INTERVIEW_PREPARATION.md) — Deep-dive architectural Q&A grounded in the actual codebase.
+* [POSTHUB_4_FINAL_REPORT.md](docs/POSTHUB_4_FINAL_REPORT.md) — Final engineering audit and production readiness sign-off.
+
+---
+
+## 📄 License
+MIT License. Engineered by [Naina Varshney](https://github.com/naina766).
