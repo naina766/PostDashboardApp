@@ -42,6 +42,7 @@ export const createPostController = async (req, res, next) => {
         image,
         media,
         postType: req.body.postType,
+        status: req.body.status,
         poll,
         linkPreview,
       },
@@ -61,11 +62,12 @@ export const createPostController = async (req, res, next) => {
 
 export const getPostsController = async (req, res, next) => {
   try {
-    const { page, limit, search, sort, feedType, tag, authorId } = req.query;
+    const { page, cursor, limit, search, sort, feedType, tag, authorId } = req.query;
     const currentUserId = req.user?._id;
 
     const result = await PostService.getPosts({
       page,
+      cursor,
       limit,
       search,
       sort,
@@ -79,6 +81,36 @@ export const getPostsController = async (req, res, next) => {
       statusCode: 200,
       success: true,
       message: "Posts fetched successfully",
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyPostsController = async (req, res, next) => {
+  try {
+    const { status, page, limit } = req.query;
+    const result = await PostService.getMyPosts(req.user._id, { status, page, limit });
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "My posts fetched successfully",
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const archivePostController = async (req, res, next) => {
+  try {
+    const result = await PostService.archivePost(req.params.id, req.user._id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
       data: result,
     });
   } catch (err) {

@@ -10,6 +10,8 @@ import Follow from "../src/modules/users/follow.model.js";
 import Notification from "../src/modules/notifications/notification.model.js";
 import Bookmark from "../src/modules/bookmarks/bookmark.model.js";
 import Report from "../src/modules/reports/report.model.js";
+import RefreshToken from "../src/modules/auth/refreshToken.model.js";
+import AuditLog from "../src/modules/admin/auditLog.model.js";
 
 import * as AuthService from "../src/modules/auth/auth.service.js";
 import * as PostService from "../src/modules/posts/post.service.js";
@@ -17,6 +19,8 @@ import * as UserService from "../src/modules/users/user.service.js";
 import * as ReportService from "../src/modules/reports/report.service.js";
 import * as ExploreService from "../src/modules/explore/explore.service.js";
 import * as AdminService from "../src/modules/admin/admin.service.js";
+import * as FeedService from "../src/modules/posts/feed.service.js";
+
 
 describe("1. PostHub 2.0 Database Architecture & Social Collections", () => {
   it("should have all required V2 social models registered", () => {
@@ -27,7 +31,10 @@ describe("1. PostHub 2.0 Database Architecture & Social Collections", () => {
     assert.strictEqual(models.includes("Notification"), true, "Notification model must exist");
     assert.strictEqual(models.includes("Bookmark"), true, "Bookmark model must exist");
     assert.strictEqual(models.includes("Report"), true, "Report model must exist");
+    assert.strictEqual(models.includes("RefreshToken"), true, "RefreshToken model must exist");
+    assert.strictEqual(models.includes("AuditLog"), true, "AuditLog model must exist");
   });
+
 
   it("should have rich social fields in Post and User schemas", () => {
     assert.ok(Post.schema.path("hashtags"), "Post schema must have hashtags array");
@@ -292,3 +299,101 @@ describe("9. Owner & Role Authorization Enforcements", () => {
     );
   });
 });
+
+describe("10. PostHub 3.0 Dual-Token JWT & Refresh Token Lifecycle", () => {
+  it("should reject refresh session when refresh token is missing", async () => {
+    await assert.rejects(
+      async () => {
+        await AuthService.refreshSession("");
+      },
+      (err) => {
+        assert.strictEqual(err.statusCode, 400);
+        assert.strictEqual(err.message, "Refresh token required");
+        return true;
+      }
+    );
+  });
+
+  it("should enforce strong password policy (< 6 characters rejected)", () => {
+    assert.throws(
+      () => {
+        AuthService.validatePassword("123");
+      },
+      (err) => {
+        assert.strictEqual(err.statusCode, 400);
+        assert.strictEqual(err.message, "Password must be at least 6 characters long");
+        return true;
+      }
+    );
+  });
+});
+
+describe("11. PostHub 3.0 Social Safety (Block & Mute)", () => {
+  it("should prevent users from blocking themselves", async () => {
+    const selfId = new mongoose.Types.ObjectId();
+    await assert.rejects(
+      async () => {
+        await UserService.blockUser(selfId, selfId);
+      },
+      (err) => {
+        assert.strictEqual(err.statusCode, 400);
+        assert.strictEqual(err.message, "Cannot block yourself");
+        return true;
+      }
+    );
+  });
+
+  it("should prevent users from muting themselves", async () => {
+    const selfId = new mongoose.Types.ObjectId();
+    await assert.rejects(
+      async () => {
+        await UserService.muteUser(selfId, selfId);
+      },
+      (err) => {
+        assert.strictEqual(err.statusCode, 400);
+        assert.strictEqual(err.message, "Cannot mute yourself");
+        return true;
+      }
+    );
+  });
+});
+
+describe("12. PostHub 3.0 Account Settings & Session Management", () => {
+  it("should reject password change when passwords are missing", async () => {
+    const userId = new mongoose.Types.ObjectId();
+    await assert.rejects(
+      async () => {
+        await UserService.changePassword(userId, "", "");
+      },
+      (err) => {
+        assert.strictEqual(err.statusCode, 400);
+        assert.strictEqual(err.message, "Old and new password required");
+        return true;
+      }
+    );
+  });
+});
+
+describe("13. PostHub 3.0 Explainable Discovery Engine Signals", () => {
+  it("should export calculateDiscoveryReason function with explainable reasons", () => {
+    assert.strictEqual(typeof FeedService.calculateDiscoveryReason, "function");
+    const mockPost = {
+      _id: new mongoose.Types.ObjectId(),
+      user: { _id: new mongoose.Types.ObjectId() },
+      likesCount: 15,
+      commentsCount: 5,
+      savesCount: 3,
+      trendingScore: 150,
+      createdAt: new Date(),
+      hashtags: ["react", "javascript"],
+    };
+    const reason = FeedService.calculateDiscoveryReason(mockPost, {
+      followingUserIds: [],
+      currentUserId: new mongoose.Types.ObjectId(),
+    });
+
+    assert.strictEqual(reason, "Trending in #react");
+  });
+});
+
+

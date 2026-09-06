@@ -5,6 +5,7 @@ import {
   toggleUserSuspensionController,
   updateUserRoleController,
   adminDeletePostController,
+  getAuditLogsController,
 } from "./admin.controller.js";
 import { authMiddleware, roleMiddleware } from "../../middlewares/auth.middleware.js";
 
@@ -18,5 +19,6 @@ router.get("/users", getUsersController);
 router.patch("/users/:id/suspend", roleMiddleware("admin"), toggleUserSuspensionController);
 router.patch("/users/:id/role", roleMiddleware("admin"), updateUserRoleController);
 router.delete("/posts/:id", adminDeletePostController);
+router.get("/audit-logs", getAuditLogsController);
 
 export default router;

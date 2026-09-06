@@ -2,7 +2,13 @@ import axios from "axios";
 
 const getBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
-  if (!envUrl) return "http://localhost:5000/api";
+  if (!envUrl) {
+    if (import.meta.env.PROD) {
+      console.warn("⚠️ Warning: VITE_API_URL is not configured. Falling back to relative '/api'.");
+      return "/api";
+    }
+    return "http://localhost:5000/api";
+  }
   return envUrl.endsWith("/api") ? envUrl : `${envUrl}/api`;
 };
 

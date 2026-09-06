@@ -1,19 +1,28 @@
-# PostHub 2.0 - Backend Dockerfile
+# PostHub 4.0 - Backend Production Dockerfile
 FROM node:20-alpine
 
+# Set working directory
 WORKDIR /app
 
-# Install dependencies first for efficient layer caching
+# Install production dependencies with layer caching
 COPY backend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci --only=production && npm cache clean --force
 
-# Copy backend source
-COPY backend/ ./
+# Copy backend application files with appropriate ownership
+COPY --chown=node:node backend/ ./
 
-# Expose API port
+# Expose backend port
 EXPOSE 5000
 
 ENV NODE_ENV=production
+ENV PORT=5000
 
-# Run API server
+# Run as non-root node user for container security
+USER node
+
+# Container liveness healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
+
+# Start production API server
 CMD ["node", "server.js"]

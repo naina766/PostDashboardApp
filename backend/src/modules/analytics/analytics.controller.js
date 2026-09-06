@@ -3,7 +3,8 @@ import sendResponse from "../../utils/sendResponse.js";
 
 export const getCreatorAnalyticsController = async (req, res, next) => {
   try {
-    const data = await AnalyticsService.getCreatorAnalytics(req.user._id);
+    const { period } = req.query;
+    const data = await AnalyticsService.getCreatorAnalytics(req.user._id, period);
 
     sendResponse(res, {
       statusCode: 200,

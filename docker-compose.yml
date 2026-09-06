@@ -10,14 +10,17 @@ services:
     ports:
       - "5000:5000"
     environment:
+      - NODE_ENV=production
       - PORT=5000
       - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/posthub}
-      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey_v2_posthub}
+      - JWT_SECRET=${JWT_SECRET:-development_super_secret_jwt_key_posthub_replace_in_prod}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000,http://localhost:5173}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-demo}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-demo}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-demo}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
 
   frontend:
     build:
@@ -38,6 +41,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   mongo_data:

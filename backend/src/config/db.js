@@ -1,12 +1,56 @@
 import mongoose from "mongoose";
 
+/**
+ * Production-ready MongoDB Connection Manager
+ * Includes pool controls, timeout resilience, reconnection telemetry, and graceful shutdown.
+ */
 const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error(err);
+  const mongoUri = process.env.MONGO_URI;
+
+  if (!mongoUri) {
+    console.error("❌ Fatal: MONGO_URI environment variable is not defined.");
     process.exit(1);
+  }
+
+  const options = {
+    serverSelectionTimeoutMS: 5000, // 5s timeout on initial connection/cluster discovery
+    connectTimeoutMS: 10000,        // 10s TCP handshake timeout
+    maxPoolSize: 10,                // Connection pool size for horizontal scalability
+    minPoolSize: 2,                 // Keep warm connections ready
+    socketTimeoutMS: 45000,         // Socket inactivity timeout
+  };
+
+  try {
+    const conn = await mongoose.connect(mongoUri, options);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
+  } catch (err) {
+    console.error(`❌ MongoDB Initial Connection Error: ${err.message}`);
+    process.exit(1);
+  }
+
+  // Connection Lifecycle Monitoring
+  mongoose.connection.on("disconnected", () => {
+    console.warn("⚠️  MongoDB connection disconnected. Attempting automatic reconnection...");
+  });
+
+  mongoose.connection.on("reconnected", () => {
+    console.log("🔄 MongoDB connection re-established.");
+  });
+
+  mongoose.connection.on("error", (err) => {
+    console.error(`❌ MongoDB runtime error: ${err.message}`);
+  });
+};
+
+/**
+ * Gracefully close database connection during server termination
+ */
+export const closeDB = async () => {
+  try {
+    await mongoose.connection.close(false);
+    console.log("🛑 MongoDB connection closed cleanly.");
+  } catch (err) {
+    console.error("❌ Error closing MongoDB connection:", err);
   }
 };
 

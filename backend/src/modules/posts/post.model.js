@@ -59,6 +59,20 @@ const postSchema = new mongoose.Schema(
       enum: ["TEXT", "IMAGE", "POLL", "LINK"],
       default: "TEXT",
     },
+    status: {
+      type: String,
+      enum: ["PUBLISHED", "DRAFT", "ARCHIVED"],
+      default: "PUBLISHED",
+      index: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    editedAt: {
+      type: Date,
+    },
     poll: {
       question: { type: String, default: "" },
       options: [
@@ -92,14 +106,14 @@ const postSchema = new mongoose.Schema(
     sharesCount: { type: Number, default: 0 },
     savesCount: { type: Number, default: 0 },
     trendingScore: { type: Number, default: 0, index: true },
+    discoveryReason: { type: String, default: "" },
   },
   { timestamps: true }
 );
 
 postSchema.index({ createdAt: -1 });
+postSchema.index({ status: 1, createdAt: -1 });
 postSchema.index({ trendingScore: -1 });
 postSchema.index({ hashtags: 1, createdAt: -1 });
 
 export default mongoose.model("Post", postSchema);
-
-

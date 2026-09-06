@@ -6,6 +6,8 @@ import {
 import {
   createPostController,
   getPostsController,
+  getMyPostsController,
+  archivePostController,
   getPostByIdController,
   updatePostController,
   deletePostController,
@@ -27,8 +29,9 @@ const postUpload = upload.fields([
   { name: "images", maxCount: 4 },
 ]);
 
-// Saved posts - must be defined before :id route
+// Saved posts & My posts - defined before :id route
 router.get("/saved/me", authMiddleware, getSavedPostsController);
+router.get("/me", authMiddleware, getMyPostsController);
 
 // Post CRUD
 router.get("/", optionalAuthMiddleware, getPostsController);
@@ -36,6 +39,9 @@ router.post("/", authMiddleware, postUpload, createPostController);
 router.get("/:id", optionalAuthMiddleware, getPostByIdController);
 router.put("/:id", authMiddleware, postUpload, updatePostController);
 router.delete("/:id", authMiddleware, deletePostController);
+
+// Lifecycle: Archive / Restore
+router.patch("/:id/archive", authMiddleware, archivePostController);
 
 // Likes & Saves
 router.post("/:id/like", authMiddleware, likePostController);

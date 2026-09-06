@@ -131,3 +131,103 @@ export const getSuggestionsController = async (req, res, next) => {
     next(err);
   }
 };
+
+export const blockUserController = async (req, res, next) => {
+  try {
+    const result = await UserService.blockUser(req.user._id, req.params.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const unblockUserController = async (req, res, next) => {
+  try {
+    const result = await UserService.unblockUser(req.user._id, req.params.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const muteUserController = async (req, res, next) => {
+  try {
+    const result = await UserService.muteUser(req.user._id, req.params.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const unmuteUserController = async (req, res, next) => {
+  try {
+    const result = await UserService.unmuteUser(req.user._id, req.params.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changePasswordController = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const result = await UserService.changePassword(req.user._id, oldPassword, newPassword);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
+      data: null,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateSettingsController = async (req, res, next) => {
+  try {
+    const result = await UserService.updateSettings(req.user._id, req.body);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Settings updated successfully",
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteAccountController = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const result = await UserService.deleteAccount(req.user._id, password);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.message,
+      data: null,
+    });
+  } catch (err) {
+    next(err);
+  }
+};

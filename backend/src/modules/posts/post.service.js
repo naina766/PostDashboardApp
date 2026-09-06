@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
 import Post from "./post.model.js";
 import User from "../auth/auth.model.js";
-import Follow from "../users/follow.model.js";
 import Bookmark from "../bookmarks/bookmark.model.js";
 import Notification from "../notifications/notification.model.js";
+import { deliverNotification } from "../notifications/notificationDelivery.service.js";
+import { getFeed } from "./feed.service.js";
 import ApiError from "../../utils/ApiError.js";
 import deleteImage from "../../config/clodinaryDelete.js";
 
@@ -35,9 +36,7 @@ export const calculateTrendingScore = (post) => {
     (Date.now() - new Date(post.createdAt || Date.now()).getTime()) / (1000 * 60 * 60)
   );
 
-  // Recency decay bonus: drops smoothly over 72 hours
   const recencyBonus = Math.max(0, 100 - ageInHours * 1.5);
-
   return Math.round(likes * 1 + comments * 3 + shares * 4 + saves * 3 + recencyBonus);
 };
 
@@ -62,7 +61,9 @@ export const createPost = async (data, user) => {
     postType = "LINK";
   }
 
-  if (!content && !image && media.length === 0 && postType !== "POLL") {
+  const status = ["PUBLISHED", "DRAFT", "ARCHIVED"].includes(data.status) ? data.status : "PUBLISHED";
+
+  if (!content && !image && media.length === 0 && postType !== "POLL" && status !== "DRAFT") {
     throw new ApiError(400, "Post must contain text, an image, or both.");
   }
 
@@ -82,7 +83,7 @@ export const createPost = async (data, user) => {
     pollData = {
       question: data.poll.question.trim(),
       options: validOptions,
-      expiresAt: data.poll.expiresAt ? new Date(data.poll.expiresAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // default 7 days
+      expiresAt: data.poll.expiresAt ? new Date(data.poll.expiresAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     };
   }
 
@@ -95,6 +96,7 @@ export const createPost = async (data, user) => {
     image,
     media,
     postType,
+    status,
     poll: pollData,
     linkPreview: data.linkPreview || undefined,
     hashtags,
@@ -105,22 +107,21 @@ export const createPost = async (data, user) => {
     commentsCount: 0,
     sharesCount: 0,
     savesCount: 0,
-    trendingScore: 100, // Initial recency bonus
+    trendingScore: 100,
   });
 
-  // Increment user's posts count
-  await User.findByIdAndUpdate(user._id, { $inc: { postsCount: 1 } });
+  if (status === "PUBLISHED") {
+    await User.findByIdAndUpdate(user._id, { $inc: { postsCount: 1 } });
 
-  // Handle mentions notification
-  if (mentions.length > 0) {
-    const mentionedUsers = await User.find({ username: { $in: mentions } }).select("_id");
-    for (const mUser of mentionedUsers) {
-      if (mUser._id.toString() !== user._id.toString()) {
-        await Notification.create({
-          recipient: mUser._id,
-          actor: user._id,
+    // Mentions notification delivery
+    if (mentions.length > 0) {
+      const mentionedUsers = await User.find({ username: { $in: mentions } }).select("_id");
+      for (const mUser of mentionedUsers) {
+        await deliverNotification({
+          recipientId: mUser._id,
+          actorId: user._id,
           type: "MENTION",
-          post: post._id,
+          postId: post._id,
           message: "mentioned you in a post",
         });
       }
@@ -132,19 +133,37 @@ export const createPost = async (data, user) => {
 
 export const getPosts = async ({
   page = 1,
+  cursor = null,
   limit = 10,
   search = "",
   sort = "latest",
-  feedType = "all", // all, forYou, following, trending, latest
+  feedType = "forYou",
   tag = "",
   authorId = "",
   currentUserId = null,
 } = {}) => {
+  // If cursor is provided, use FeedService cursor seek
+  if (cursor) {
+    return await getFeed({
+      feedType,
+      cursor,
+      limit,
+      tag,
+      authorId,
+      search,
+      currentUserId,
+    });
+  }
+
+  // Offset-based pagination
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
   const skip = (pageNum - 1) * limitNum;
 
-  const match = {};
+  const match = {
+    status: "PUBLISHED",
+    isDeleted: false,
+  };
 
   if (search && search.trim()) {
     const regex = new RegExp(search.trim(), "i");
@@ -164,14 +183,17 @@ export const getPosts = async ({
     match.user = new mongoose.Types.ObjectId(authorId);
   }
 
-  // Handle feedType
-  if (feedType === "following" && currentUserId) {
-    const followingIds = await Follow.find({ follower: currentUserId }).distinct("following");
-    match.user = { $in: followingIds };
+  // Filter blocked users if logged in
+  if (currentUserId) {
+    const currUser = await User.findById(currentUserId).select("blockedUsers mutedUsers");
+    if (currUser && (currUser.blockedUsers?.length > 0 || currUser.mutedUsers?.length > 0)) {
+      const excluded = [...(currUser.blockedUsers || []), ...(currUser.mutedUsers || [])];
+      match.user = { ...(match.user || {}), $nin: excluded };
+    }
   }
 
   const total = await Post.countDocuments(match);
-  let query = Post.find(match).populate("user", "name username avatar isVerified");
+  let query = Post.find(match).populate("user", "name username avatar isVerified role");
 
   if (sort === "trending" || feedType === "trending") {
     query = query.sort({ trendingScore: -1, createdAt: -1 });
@@ -185,7 +207,6 @@ export const getPosts = async ({
 
   const rawPosts = await query.skip(skip).limit(limitNum).lean();
 
-  // If user is logged in, attach isLiked and isSaved states efficiently
   let userBookmarks = new Set();
   if (currentUserId && rawPosts.length > 0) {
     const postIds = rawPosts.map((p) => p._id);
@@ -198,13 +219,10 @@ export const getPosts = async ({
 
   const posts = rawPosts.map((post) => {
     const isLiked = currentUserId
-      ? post.likes.some((l) => l.userId?.toString() === currentUserId.toString())
+      ? post.likes?.some((l) => l.userId?.toString() === currentUserId.toString())
       : false;
-    const isSaved = currentUserId
-      ? userBookmarks.has(post._id.toString())
-      : false;
+    const isSaved = currentUserId ? userBookmarks.has(post._id.toString()) : false;
 
-    // Check if user voted on poll
     let userVotedOption = null;
     if (post.poll && post.poll.options && currentUserId) {
       post.poll.options.forEach((opt, idx) => {
@@ -226,6 +244,7 @@ export const getPosts = async ({
   const hasNextPage = pageNum < totalPages;
 
   return {
+    items: posts,
     posts,
     pagination: {
       page: pageNum,
@@ -233,6 +252,7 @@ export const getPosts = async ({
       total,
       totalPages,
       hasNextPage,
+      hasMore: hasNextPage,
     },
   };
 };
@@ -242,20 +262,18 @@ export const getPostById = async (postId, currentUserId = null) => {
     throw new ApiError(400, "Invalid Post ID");
   }
 
-  const post = await Post.findById(postId)
-    .populate("user", "name username avatar isVerified bio")
+  const post = await Post.findOne({ _id: postId, isDeleted: false })
+    .populate("user", "name username avatar isVerified bio role")
     .lean();
   if (!post) throw new ApiError(404, "Post not found");
 
   const isLiked = currentUserId
-    ? post.likes.some((l) => l.userId?.toString() === currentUserId.toString())
+    ? post.likes?.some((l) => l.userId?.toString() === currentUserId.toString())
     : false;
 
   let isSaved = false;
   if (currentUserId) {
-    isSaved = Boolean(
-      await Bookmark.exists({ user: currentUserId, post: postId })
-    );
+    isSaved = Boolean(await Bookmark.exists({ user: currentUserId, post: postId }));
   }
 
   let userVotedOption = null;
@@ -273,6 +291,50 @@ export const getPostById = async (postId, currentUserId = null) => {
     isSaved,
     userVotedOption,
   };
+};
+
+export const getMyPosts = async (userId, { status = "PUBLISHED", page = 1, limit = 10 } = {}) => {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+  const skip = (pageNum - 1) * limitNum;
+
+  const filter = {
+    user: userId,
+    isDeleted: false,
+  };
+  if (status && status !== "ALL") {
+    filter.status = status.toUpperCase();
+  }
+
+  const total = await Post.countDocuments(filter);
+  const posts = await Post.find(filter)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNum)
+    .lean();
+
+  return {
+    items: posts,
+    posts,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum) || 1,
+      hasNextPage: pageNum * limitNum < total,
+    },
+  };
+};
+
+export const archivePost = async (postId, userId) => {
+  if (!mongoose.Types.ObjectId.isValid(postId)) throw new ApiError(400, "Invalid Post ID");
+  const post = await Post.findOne({ _id: postId, user: userId });
+  if (!post) throw new ApiError(404, "Post not found or unauthorized");
+
+  post.status = post.status === "ARCHIVED" ? "PUBLISHED" : "ARCHIVED";
+  await post.save();
+
+  return { status: post.status, message: `Post ${post.status.toLowerCase()} successfully` };
 };
 
 export const updatePost = async (postId, data, userId) => {
@@ -302,6 +364,7 @@ export const updatePost = async (postId, data, userId) => {
   post.title = newTitle;
   post.content = newContent;
   post.image = newImage;
+  post.editedAt = new Date();
   post.hashtags = extractHashtags(`${newTitle} ${newContent}`);
   post.mentions = extractMentions(`${newTitle} ${newContent}`);
 
@@ -328,13 +391,8 @@ export const deletePost = async (postId, userId, userRole = "user") => {
     await deleteImage(post.image);
   }
 
-  // Decrement user's posts count
   await User.findByIdAndUpdate(post.user, { $inc: { postsCount: -1 } });
-
-  // Delete bookmarks associated with this post
   await Bookmark.deleteMany({ post: postId });
-
-  // Delete notifications associated with this post
   await Notification.deleteMany({ post: postId });
 
   await post.deleteOne();
@@ -349,8 +407,8 @@ export const toggleLike = async (postId, user) => {
   const post = await Post.findById(postId);
   if (!post) throw new ApiError(404, "Post not found");
 
-  const alreadyLiked = post.likes.some(
-    (l) => l.userId.toString() === user._id.toString()
+  const alreadyLiked = post.likes?.some(
+    (l) => l.userId?.toString() === user._id.toString()
   );
 
   let updatedPost;
@@ -379,19 +437,15 @@ export const toggleLike = async (postId, user) => {
     );
     liked = true;
 
-    // Send notification if not liking own post
-    if (post.user.toString() !== user._id.toString()) {
-      await Notification.create({
-        recipient: post.user,
-        actor: user._id,
-        type: "LIKE",
-        post: post._id,
-        message: "liked your post",
-      });
-    }
+    await deliverNotification({
+      recipientId: post.user,
+      actorId: user._id,
+      type: "LIKE",
+      postId: post._id,
+      message: "liked your post",
+    });
   }
 
-  // Update trending score
   const trendingScore = calculateTrendingScore(updatedPost);
   await Post.findByIdAndUpdate(postId, { trendingScore });
 
@@ -433,21 +487,16 @@ export const addComment = async (postId, user, text) => {
   if (!updatedPost) throw new ApiError(404, "Post not found");
 
   const addedComment = updatedPost.comments[updatedPost.comments.length - 1];
-
-  // Recalculate trending score
   const trendingScore = calculateTrendingScore(updatedPost);
   await Post.findByIdAndUpdate(postId, { trendingScore });
 
-  // Notification to post author
-  if (updatedPost.user.toString() !== user._id.toString()) {
-    await Notification.create({
-      recipient: updatedPost.user,
-      actor: user._id,
-      type: "COMMENT",
-      post: updatedPost._id,
-      message: "commented on your post",
-    });
-  }
+  await deliverNotification({
+    recipientId: updatedPost.user,
+    actorId: user._id,
+    type: "COMMENT",
+    postId: updatedPost._id,
+    message: "commented on your post",
+  });
 
   return {
     comment: addedComment,
@@ -474,7 +523,6 @@ export const deleteComment = async (postId, commentId, user, userRole = "user") 
     throw new ApiError(403, "Not authorized to delete this comment");
   }
 
-  // Deduct 1 for comment + all replies within it
   const repliesCount = comment.replies ? comment.replies.length : 0;
   const totalDec = 1 + repliesCount;
 
@@ -520,16 +568,13 @@ export const addReply = async (postId, commentId, user, text) => {
 
   const addedReply = comment.replies[comment.replies.length - 1];
 
-  // Notify comment author
-  if (comment.userId.toString() !== user._id.toString()) {
-    await Notification.create({
-      recipient: comment.userId,
-      actor: user._id,
-      type: "REPLY",
-      post: post._id,
-      message: "replied to your comment",
-    });
-  }
+  await deliverNotification({
+    recipientId: comment.userId,
+    actorId: user._id,
+    type: "REPLY",
+    postId: post._id,
+    message: "replied to your comment",
+  });
 
   return {
     reply: addedReply,
@@ -583,14 +628,11 @@ export const votePoll = async (postId, optionIndex, user) => {
     throw new ApiError(400, "Invalid poll option index");
   }
 
-  // Remove existing vote across all options
   post.poll.options.forEach((opt) => {
     opt.votes = opt.votes.filter((v) => v.toString() !== user._id.toString());
   });
 
-  // Cast vote on chosen option
   post.poll.options[optIdx].votes.push(user._id);
-
   await post.save();
 
   return {
@@ -608,8 +650,8 @@ export const toggleSavePost = async (postId, user) => {
   if (!post) throw new ApiError(404, "Post not found");
 
   const existing = await Bookmark.findOne({ user: user._id, post: postId });
-
   let saved = false;
+
   if (existing) {
     await existing.deleteOne();
     saved = false;
@@ -619,16 +661,13 @@ export const toggleSavePost = async (postId, user) => {
     saved = true;
     await Post.findByIdAndUpdate(postId, { $inc: { savesCount: 1 } });
 
-    // Notify post author if not saving own post
-    if (post.user.toString() !== user._id.toString()) {
-      await Notification.create({
-        recipient: post.user,
-        actor: user._id,
-        type: "SAVE",
-        post: post._id,
-        message: "saved your post",
-      });
-    }
+    await deliverNotification({
+      recipientId: post.user,
+      actorId: user._id,
+      type: "SAVE",
+      postId: post._id,
+      message: "saved your post",
+    });
   }
 
   const updatedPost = await Post.findById(postId);
@@ -647,7 +686,7 @@ export const getSavedPosts = async (userId, { page = 1, limit = 10 } = {}) => {
   const bookmarks = await Bookmark.find({ user: userId })
     .populate({
       path: "post",
-      populate: { path: "user", select: "name username avatar isVerified" },
+      populate: { path: "user", select: "name username avatar isVerified role" },
     })
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -656,7 +695,7 @@ export const getSavedPosts = async (userId, { page = 1, limit = 10 } = {}) => {
 
   const posts = bookmarks
     .map((b) => b.post)
-    .filter(Boolean)
+    .filter((p) => p && !p.isDeleted && p.status === "PUBLISHED")
     .map((post) => ({
       ...post,
       isLiked: post.likes ? post.likes.some((l) => l.userId?.toString() === userId.toString()) : false,
@@ -666,6 +705,7 @@ export const getSavedPosts = async (userId, { page = 1, limit = 10 } = {}) => {
   const totalPages = Math.ceil(total / limitNum) || 1;
 
   return {
+    items: posts,
     posts,
     pagination: {
       page: pageNum,

@@ -24,6 +24,20 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     isSuspended: { type: Boolean, default: false },
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    mutedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    privacy: {
+      profileVisibility: { type: String, enum: ["public", "private"], default: "public" },
+      whoCanComment: { type: String, enum: ["everyone", "following"], default: "everyone" },
+      whoCanMention: { type: String, enum: ["everyone", "following"], default: "everyone" },
+    },
+    notificationSettings: {
+      likes: { type: Boolean, default: true },
+      comments: { type: Boolean, default: true },
+      replies: { type: Boolean, default: true },
+      follows: { type: Boolean, default: true },
+      mentions: { type: Boolean, default: true },
+      saves: { type: Boolean, default: true },
+    },
   },
   { timestamps: true }
 );

@@ -3,15 +3,31 @@ import Post from "../posts/post.model.js";
 import User from "../auth/auth.model.js";
 import ApiError from "../../utils/ApiError.js";
 
-export const getCreatorAnalytics = async (userId) => {
+export const getCreatorAnalytics = async (userId, period = "30d") => {
   const user = await User.findById(userId).select("followersCount followingCount postsCount");
   if (!user) throw new ApiError(404, "User not found");
 
   const objectId = new mongoose.Types.ObjectId(userId);
 
-  // Aggregate stats across all posts by this user
+  // Time boundary calculation
+  let startDate = null;
+  const now = new Date();
+  if (period === "7d") {
+    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  } else if (period === "90d") {
+    startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  } else if (period === "30d") {
+    startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+
+  const matchFilter = {
+    user: objectId,
+    isDeleted: false,
+    ...(startDate ? { createdAt: { $gte: startDate } } : {}),
+  };
+
   const stats = await Post.aggregate([
-    { $match: { user: objectId } },
+    { $match: matchFilter },
     {
       $group: {
         _id: null,
@@ -43,16 +59,16 @@ export const getCreatorAnalytics = async (userId) => {
     ? Number((totalEngagements / summary.totalPosts).toFixed(1))
     : 0;
 
-  // Top 5 posts by engagement
-  const topPosts = await Post.find({ user: objectId })
+  // Top 5 posts by engagement in this period
+  const topPosts = await Post.find(matchFilter)
     .sort({ trendingScore: -1, likesCount: -1 })
     .limit(5)
     .select("title content postType likesCount commentsCount savesCount createdAt")
     .lean();
 
-  // Posts timeline by month (last 6 months)
+  // Posts timeline by month
   const timeline = await Post.aggregate([
-    { $match: { user: objectId } },
+    { $match: { user: objectId, isDeleted: false } },
     {
       $group: {
         _id: {
@@ -69,6 +85,7 @@ export const getCreatorAnalytics = async (userId) => {
   ]);
 
   return {
+    period,
     followersCount: user.followersCount || 0,
     followingCount: user.followingCount || 0,
     totalPosts: summary.totalPosts,
