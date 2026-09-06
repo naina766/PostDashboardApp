@@ -45,35 +45,35 @@ export const registerUser = async ({ name, email, password, username }) => {
   validatePassword(password);
 
   const cleanEmail = email.toLowerCase().trim();
-  const existingEmail = await User.findOne({ email: cleanEmail });
-  if (existingEmail) throw new ApiError(400, "Email already exists");
-
   let cleanUsername = "";
+
   if (username && username.trim()) {
     cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, "");
     if (cleanUsername.length < 3) {
       throw new ApiError(400, "Username must be at least 3 characters");
     }
-    const existingUser = await User.findOne({ username: cleanUsername });
-    if (existingUser) throw new ApiError(400, "Username is already taken");
   } else {
     const base = name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 15) || "user";
-    let candidate = base;
-    let counter = 1;
-    while (await User.findOne({ username: candidate })) {
-      candidate = `${base}${Math.floor(100 + Math.random() * 900)}`;
-      counter++;
-      if (counter > 10) candidate = `${base}${Date.now().toString().slice(-4)}`;
-    }
-    cleanUsername = candidate;
+    cleanUsername = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
   }
 
-  const hashed = await bcrypt.hash(password, 10);
+  // Concurrently run email lookup, username lookup, and bcrypt hashing in parallel
+  const [existingEmail, existingUser, hashedPassword] = await Promise.all([
+    User.findOne({ email: cleanEmail }),
+    User.findOne({ username: cleanUsername }),
+    bcrypt.hash(password, 10),
+  ]);
+
+  if (existingEmail) throw new ApiError(400, "Email already exists");
+  if (existingUser) {
+    cleanUsername = `${cleanUsername.slice(0, 10)}${Date.now().toString().slice(-4)}`;
+  }
+
   const user = await User.create({
     name: name.trim(),
     email: cleanEmail,
     username: cleanUsername,
-    password: hashed,
+    password: hashedPassword,
   });
 
   return {
