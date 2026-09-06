@@ -19,6 +19,7 @@ import {
   FiMoreHorizontal
 } from "react-icons/fi";
 import { formatTimeAgo } from "../utils/timeAgo";
+import { getInitials } from "../utils/initials";
 import { 
   toggleLike, 
   toggleSave, 
@@ -357,7 +358,7 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
               />
             ) : (
               <div className="post-author-avatar" aria-hidden="true">
-                {authorName.charAt(0).toUpperCase()}
+                {getInitials(authorName)}
               </div>
             )}
           </Link>
@@ -578,8 +579,8 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
             title={liked ? "Unlike post" : "Like post"}
             aria-label={liked ? "Unlike post" : "Like post"}
           >
-            <FiHeart style={{ fill: liked ? "currentColor" : "none" }} />
-            <span>{likesCount}</span>
+            <FiHeart size={18} style={{ fill: liked ? "currentColor" : "none" }} aria-hidden="true" />
+            <span className="post-action-count">{likesCount}</span>
           </button>
 
           {/* Comments Toggle */}
@@ -590,8 +591,8 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
             title="Comments"
             aria-label="Toggle comments"
           >
-            <FiMessageCircle />
-            <span>{comments.length}</span>
+            <FiMessageCircle size={18} aria-hidden="true" />
+            <span className="post-action-count">{comments.length}</span>
           </button>
 
           {/* Save / Bookmark */}
@@ -603,7 +604,7 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
             title={saved ? "Remove bookmark" : "Save post"}
             aria-label={saved ? "Remove bookmark" : "Bookmark post"}
           >
-            <FiBookmark style={{ fill: saved ? "currentColor" : "none" }} />
+            <FiBookmark size={18} style={{ fill: saved ? "currentColor" : "none" }} aria-hidden="true" />
           </button>
 
           {/* Share */}
@@ -614,7 +615,7 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
             title="Share post"
             aria-label="Share post"
           >
-            <FiShare2 />
+            <FiShare2 size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -633,7 +634,7 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
           ) : (
             <div className="d-flex flex-column gap-3 mb-3">
               {comments.map((comment) => {
-                const commentUserInitial = (comment.username || "U").charAt(0).toUpperCase();
+                const commentUserInitial = getInitials(comment.username || comment.userId?.name || "U");
                 const isCommentAuthor = currentUser && (comment.userId === currentUser._id || comment.userId?._id === currentUser._id);
                 const canDelete = isCommentAuthor || isOwner || isAdminOrMod;
                 const commentLikes = comment.likes?.length || 0;
@@ -643,7 +644,7 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
                   <div key={comment._id} className="comment-thread">
                     {/* Primary Comment */}
                     <div className="comment-item d-flex gap-2">
-                      <div className="comment-avatar rounded-circle d-flex align-items-center justify-content-center bg-primary text-white small flex-shrink-0" style={{ width: 32, height: 32 }}>
+                      <div className="comment-avatar" aria-hidden="true">
                         {commentUserInitial}
                       </div>
                       <div className="comment-bubble flex-grow-1 p-2.5 rounded-3 bg-body border">
@@ -693,7 +694,7 @@ export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle
                         {comment.replies.map((reply, rIdx) => (
                           <div key={reply._id || rIdx} className="d-flex gap-2">
                             <div className="rounded-circle d-flex align-items-center justify-content-center bg-secondary text-white small flex-shrink-0" style={{ width: 26, height: 26, fontSize: "11px" }}>
-                              {(reply.username || "U").charAt(0).toUpperCase()}
+                              {getInitials(reply.username || "U")}
                             </div>
                             <div className="p-2 rounded-3 bg-body border flex-grow-1">
                               <div className="d-flex justify-content-between align-items-center mb-0.5">

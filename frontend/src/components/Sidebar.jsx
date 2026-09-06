@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { Card, Button, Badge, Spinner } from "react-bootstrap";
+import { Card, Button } from "react-bootstrap";
 import {
   FiHome,
   FiCompass,
@@ -13,13 +13,13 @@ import {
   FiTrendingUp,
   FiUserPlus,
   FiUserCheck,
-  FiActivity,
   FiBell
 } from "react-icons/fi";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import { getSuggestions, followUser, unfollowUser } from "../services/users";
 import { getTrending } from "../services/explore";
+import { getInitials } from "../utils/initials";
 
 export function LeftSidebar() {
   const { user } = useUser();
@@ -50,7 +50,7 @@ export function LeftSidebar() {
               style={{ width: 40, height: 40, fontSize: "1rem" }}
               aria-hidden="true"
             >
-              {(user.name || "U").charAt(0).toUpperCase()}
+              {getInitials(user.name)}
             </div>
           )}
           <div className="overflow-hidden">
@@ -105,7 +105,7 @@ export function LeftSidebar() {
           </NavLink>
 
           <NavLink
-            to="/creator"
+            to="/creator-analytics"
             className={({ isActive }) =>
               `ph-sidebar-link ${isActive ? "active" : ""}`
             }
@@ -355,9 +355,10 @@ export function RightWidgets() {
                       ) : (
                         <div
                           className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                          style={{ width: "34px", height: "34px", fontSize: "13px" }}
+                          style={{ width: "34px", height: "34px", fontSize: "11px" }}
+                          aria-hidden="true"
                         >
-                          {creator.name ? creator.name[0].toUpperCase() : "U"}
+                          {getInitials(creator.name)}
                         </div>
                       )}
                       <div className="overflow-hidden">

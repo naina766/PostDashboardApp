@@ -298,7 +298,7 @@ export default function Notifications() {
           </div>
         ) : filteredNotifications.length === 0 ? (
           <EmptyState
-            icon={<FiBell size={36} className="text-primary" />}
+            icon={<FiBell size={32} className="text-primary" />}
             title="You're all caught up"
             message="New activity around your posts and network will appear here."
             actionText="Browse Feed"

@@ -1,15 +1,35 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Form, Button, InputGroup, Spinner } from "react-bootstrap";
+import { Form, Button, InputGroup, Spinner, Alert } from "react-bootstrap";
 import { FiMail, FiLock, FiShare2, FiEye, FiEyeOff } from "react-icons/fi";
 import { login } from "../services/auth";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 
+function getFriendlyAuthError(err) {
+  const status = err?.response?.status;
+  const apiMessage = err?.response?.data?.message;
+
+  if (status === 401 || status === 403) {
+    return "Invalid email or password.";
+  }
+  if (status === 429) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  if (!err?.response) {
+    return "Unable to connect. Please check your internet connection.";
+  }
+  if (apiMessage && !/axios|networkerror|internal server/i.test(apiMessage)) {
+    return apiMessage;
+  }
+  return "Sign in failed. Please try again.";
+}
+
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const { refreshUser } = useUser();
@@ -17,9 +37,14 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
+
+    setFormError("");
 
     if (!form.email || !form.password) {
-      showToast("Please fill in all fields.", "danger");
+      const msg = "Please fill in all fields.";
+      setFormError(msg);
+      showToast(msg, "danger");
       return;
     }
 
@@ -35,56 +60,73 @@ export default function Login() {
         showToast("Welcome back!", "success");
         navigate("/dashboard");
       } else {
-        showToast("Invalid response from server. Please try again.", "danger");
+        const msg = "Unable to sign in. Please try again.";
+        setFormError(msg);
+        showToast(msg, "danger");
       }
     } catch (err) {
-      showToast(
-        err.response?.data?.message || "Login failed. Please check your credentials.",
-        "danger"
-      );
+      const msg = getFriendlyAuthError(err);
+      setFormError(msg);
+      showToast(msg, "danger");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper page-enter-animate">
       <div className="auth-card">
         <div className="text-center mb-4">
           <div className="auth-brand-badge">
-            <FiShare2 /> PostHub
+            <FiShare2 aria-hidden="true" /> PostHub
           </div>
-          <h2 className="fw-bold mb-1">Welcome back</h2>
-          <p className="text-muted small">Sign in to join the social conversation</p>
+          <h1 className="h3 fw-bold mb-1">Welcome back</h1>
+          <p className="text-muted small mb-0">Sign in to continue the conversation</p>
         </div>
 
         {location.state?.message && (
-          <div className="alert alert-info py-2 small mb-3 text-center">
+          <Alert variant="info" className="py-2 small mb-3 text-center border-0">
             {location.state.message}
-          </div>
+          </Alert>
         )}
 
-        <Form onSubmit={handleSubmit}>
+        {formError && (
+          <Alert
+            variant="danger"
+            className="py-2 small mb-3 border-0"
+            onClose={() => setFormError("")}
+            dismissible
+            role="alert"
+          >
+            {formError}
+          </Alert>
+        )}
+
+        <Form onSubmit={handleSubmit} noValidate>
           <Form.Group className="mb-3" controlId="loginEmail">
-            <Form.Label className="d-flex align-items-center gap-1">
-              <FiMail className="text-muted" /> Email Address
-            </Form.Label>
-            <Form.Control
-              type="email"
-              placeholder="name@example.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-              disabled={loading}
-              aria-label="Email address"
-            />
+            <Form.Label>Email</Form.Label>
+            <InputGroup>
+              <InputGroup.Text className="bg-transparent">
+                <FiMail className="text-muted" aria-hidden="true" />
+              </InputGroup.Text>
+              <Form.Control
+                type="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+                disabled={loading}
+                autoComplete="email"
+              />
+            </InputGroup>
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="loginPassword">
-            <Form.Label className="d-flex align-items-center gap-1">
-              <FiLock className="text-muted" /> Password
-            </Form.Label>
+            <Form.Label>Password</Form.Label>
             <InputGroup>
+              <InputGroup.Text className="bg-transparent">
+                <FiLock className="text-muted" aria-hidden="true" />
+              </InputGroup.Text>
               <Form.Control
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
@@ -92,7 +134,7 @@ export default function Login() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
                 disabled={loading}
-                aria-label="Password"
+                autoComplete="current-password"
               />
               <Button
                 variant="outline-secondary"
@@ -102,7 +144,11 @@ export default function Login() {
                 title={showPassword ? "Hide password" : "Show password"}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
+                {showPassword ? (
+                  <FiEyeOff aria-hidden="true" />
+                ) : (
+                  <FiEye aria-hidden="true" />
+                )}
               </Button>
             </InputGroup>
           </Form.Group>
@@ -114,18 +160,19 @@ export default function Login() {
           >
             {loading ? (
               <>
-                <Spinner size="sm" animation="border" className="me-2" /> Signing in...
+                <Spinner size="sm" animation="border" className="me-2" aria-hidden="true" />{" "}
+                Signing in...
               </>
             ) : (
-              "Login"
+              "Sign In"
             )}
           </Button>
         </Form>
 
         <p className="text-center text-muted small mb-0">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link to="/signup" className="text-primary fw-semibold text-decoration-none">
-            Sign up
+            Create one
           </Link>
         </p>
       </div>

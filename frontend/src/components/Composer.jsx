@@ -11,6 +11,7 @@ import {
 } from "react-icons/fi";
 import { createPost as createPostApi } from "../services/posts";
 import { useToast } from "../context/ToastContext";
+import { getInitials } from "../utils/initials";
 
 export default function Composer({ user, onPostCreated }) {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function Composer({ user, onPostCreated }) {
     setContent("");
   };
 
-  const userInitial = (user?.name || "U").charAt(0).toUpperCase();
+  const userInitial = getInitials(user?.name);
   const firstName = user?.name?.split(" ")[0] || "there";
 
   return (

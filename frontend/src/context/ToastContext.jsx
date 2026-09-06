@@ -45,6 +45,8 @@ export const ToastProvider = ({ children }) => {
         position="top-end"
         className="p-3"
         style={{ zIndex: 1090, position: "fixed" }}
+        aria-live="polite"
+        aria-relevant="additions text"
       >
         {toasts.map((t) => (
           <Toast
@@ -54,6 +56,7 @@ export const ToastProvider = ({ children }) => {
             delay={t.duration}
             autohide
             className="shadow-sm border-0"
+            role="status"
           >
             <Toast.Header closeButton>
               {getIcon(t.variant)}

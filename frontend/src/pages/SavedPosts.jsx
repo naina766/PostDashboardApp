@@ -75,9 +75,9 @@ export default function SavedPosts() {
         />
 
         {error ? (
-          <div className="text-center py-5 px-3 rounded-4 bg-card border shadow-sm">
-            <div className="text-danger mb-2">
-              <FiAlertCircle size={36} />
+          <div className="text-center py-4 px-3 rounded-4 bg-card border shadow-sm">
+            <div className="text-danger mb-2" aria-hidden="true">
+              <FiAlertCircle size={32} />
             </div>
             <h5 className="fw-bold mb-1 text-body">Couldn't load saved posts</h5>
             <p className="text-muted small mb-3">Something went wrong. Please check your connection and try again.</p>
@@ -98,14 +98,14 @@ export default function SavedPosts() {
           </div>
         ) : posts.length === 0 ? (
           <EmptyState
-            icon={<FiBookmark size={36} className="text-primary" />}
+            icon={<FiBookmark size={32} className="text-primary" />}
             title="Nothing saved yet"
             message="Save posts you want to revisit later by clicking the bookmark icon on any post."
             actionText="Explore Posts"
             actionLink="/explore"
           />
         ) : (
-          <div className="d-flex flex-column gap-3">
+          <div className="d-flex flex-column gap-3 saved-posts-stream">
             {posts.map((post) => (
               <PostCard
                 key={post._id}
@@ -119,7 +119,7 @@ export default function SavedPosts() {
             ))}
 
             {pagination.hasNextPage && (
-              <div className="text-center mt-2 py-3">
+              <div className="text-center mt-1 py-2">
                 <Button
                   variant="outline-primary"
                   onClick={() => fetchSaved(page + 1, true)}
@@ -128,11 +128,11 @@ export default function SavedPosts() {
                 >
                   {loadingMore ? (
                     <>
-                      <Spinner size="sm" animation="border" className="me-2" /> Loading...
+                      <Spinner size="sm" animation="border" className="me-2" aria-hidden="true" /> Loading...
                     </>
                   ) : (
                     <>
-                      <FiRefreshCw className="me-2" /> Load More Saved Posts ({posts.length} of {pagination.total})
+                      <FiRefreshCw className="me-2" aria-hidden="true" /> Load More Saved Posts ({posts.length} of {pagination.total})
                     </>
                   )}
                 </Button>

@@ -4,7 +4,34 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#6366f1" />
+    <meta name="theme-color" content="#2563EB" />
+
+    <!-- Apply theme before paint to avoid light/dark flash -->
+    <script>
+      (function () {
+        try {
+          var pref =
+            localStorage.getItem("posthub_theme_preference") ||
+            localStorage.getItem("posthub-theme") ||
+            localStorage.getItem("posthub_theme") ||
+            "system";
+          var theme = pref;
+          if (pref === "system") {
+            theme =
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          }
+          if (theme !== "dark" && theme !== "light") theme = "light";
+          document.documentElement.setAttribute("data-theme", theme);
+          document.documentElement.setAttribute("data-bs-theme", theme);
+          if (theme === "dark") {
+            document.documentElement.style.backgroundColor = "#07111F";
+          }
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- Primary SEO Meta Tags -->
     <title>PostHub — Modern Social Community Platform for Creators & Developers</title>

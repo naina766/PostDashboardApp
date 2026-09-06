@@ -4,7 +4,7 @@ import { FiAlertCircle, FiRefreshCw } from "react-icons/fi";
 
 export default function ErrorState({
   title = "Something went wrong",
-  message = "We encountered an issue loading this content. Please try again.",
+  message = "We couldn't load this content.",
   onRetry = null,
   compact = false,
 }) {

@@ -44,6 +44,7 @@ import ProfileSkeleton from "../components/ProfileSkeleton";
 import PostSkeleton from "../components/PostSkeleton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
+import { getInitials } from "../utils/initials";
 
 export default function Profile() {
   const { username: paramUsername } = useParams();
@@ -340,7 +341,7 @@ export default function Profile() {
     );
   }
 
-  const initial = (profile.name || "U").charAt(0).toUpperCase();
+  const initial = getInitials(profile.name);
 
   return (
     <main className="profile-page py-4">

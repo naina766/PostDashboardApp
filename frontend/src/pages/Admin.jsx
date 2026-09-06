@@ -294,7 +294,7 @@ export default function Admin() {
                     message="There are no active moderation reports or user flags."
                   />
                 ) : (
-                  <div className="table-responsive">
+                  <div className="table-responsive ph-admin-table-wrap">
                     <Table hover align="middle" className="ph-admin-table mb-0 small">
                       <thead>
                         <tr className="text-muted small">
@@ -409,7 +409,7 @@ export default function Admin() {
                     message="No registered user matched your search criteria."
                   />
                 ) : (
-                  <div className="table-responsive">
+                  <div className="table-responsive ph-admin-table-wrap">
                     <Table hover align="middle" className="ph-admin-table mb-0 small">
                       <thead>
                         <tr className="text-muted small">
@@ -508,7 +508,7 @@ export default function Admin() {
                     message="Administrative events will appear here once actions are performed."
                   />
                 ) : (
-                  <div className="table-responsive">
+                  <div className="table-responsive ph-admin-table-wrap">
                     <Table hover align="middle" className="ph-admin-table mb-0 small">
                       <thead>
                         <tr className="text-muted small">

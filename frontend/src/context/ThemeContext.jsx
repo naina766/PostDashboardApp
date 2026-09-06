@@ -13,12 +13,14 @@ const resolveTheme = (pref) => {
 
 export const ThemeProvider = ({ children }) => {
   const [themePreference, setThemePreference] = useState(() => {
-    return (
-      localStorage.getItem("posthub-theme") ||
+    // Preference key first so "system" survives refresh (applied theme keys are derived).
+    const stored =
       localStorage.getItem("posthub_theme_preference") ||
+      localStorage.getItem("posthub-theme") ||
       localStorage.getItem("posthub_theme") ||
-      "system"
-    );
+      "system";
+    if (stored === "light" || stored === "dark" || stored === "system") return stored;
+    return "system";
   });
 
   const appliedTheme = resolveTheme(themePreference);
@@ -27,9 +29,11 @@ export const ThemeProvider = ({ children }) => {
     const current = resolveTheme(themePreference);
     document.documentElement.setAttribute("data-theme", current);
     document.documentElement.setAttribute("data-bs-theme", current);
+    document.documentElement.style.backgroundColor =
+      current === "dark" ? "#07111F" : "#F6F8FC";
     localStorage.setItem("posthub_theme_preference", themePreference);
     localStorage.setItem("posthub_theme", current);
-    localStorage.setItem("posthub-theme", current);
+    localStorage.setItem("posthub-theme", themePreference === "system" ? "system" : current);
 
     if (themePreference === "system" && window.matchMedia) {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -37,8 +41,9 @@ export const ThemeProvider = ({ children }) => {
         const sysTheme = e.matches ? "dark" : "light";
         document.documentElement.setAttribute("data-theme", sysTheme);
         document.documentElement.setAttribute("data-bs-theme", sysTheme);
+        document.documentElement.style.backgroundColor =
+          sysTheme === "dark" ? "#07111F" : "#F6F8FC";
         localStorage.setItem("posthub_theme", sysTheme);
-        localStorage.setItem("posthub-theme", sysTheme);
       };
       mediaQuery.addEventListener("change", handler);
       return () => mediaQuery.removeEventListener("change", handler);

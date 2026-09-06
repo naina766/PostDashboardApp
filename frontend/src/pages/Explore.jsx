@@ -321,43 +321,45 @@ export default function Explore() {
 
         {/* Regular Explore Two-Column Layout */}
         {!searchResults && (
-          <Row className="g-4">
+          <Row className="g-3 g-lg-4 align-items-start">
             {/* Main Discovery Feed Column */}
             <Col lg={8}>
-              {/* Unified Feed Navigation Control */}
-              <div className="feed-tabs-container mb-3">
-                <div className="feed-tabs-scroll" role="tablist" aria-label="Explore tabs">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === "trending"}
-                    className={`feed-tab-btn ${activeTab === "trending" ? "active" : ""}`}
-                    onClick={() => {
-                      setActiveTab("trending");
-                      setCurrentTag("");
-                      setSearchParams({});
-                    }}
-                  >
-                    <FiTrendingUp size={15} /> <span>Trending Topics</span>
-                  </button>
-                  {currentTag && (
+              {/* Unified Feed Navigation Control — only when browsing content or a tag */}
+              {(loading || error || trendingPosts.length > 0 || currentTag) && (
+                <div className="feed-tabs-container mb-3">
+                  <div className="feed-tabs-scroll" role="tablist" aria-label="Explore tabs">
                     <button
                       type="button"
                       role="tab"
-                      aria-selected={activeTab === "hashtag"}
-                      className={`feed-tab-btn ${activeTab === "hashtag" ? "active" : ""}`}
+                      aria-selected={activeTab === "trending" || !currentTag}
+                      className={`feed-tab-btn ${activeTab === "trending" || !currentTag ? "active" : ""}`}
+                      onClick={() => {
+                        setActiveTab("trending");
+                        setCurrentTag("");
+                        setSearchParams({});
+                      }}
                     >
-                      <FiTag size={15} /> <span>#{currentTag}</span>
+                      <FiTrendingUp size={15} aria-hidden="true" /> <span>Trending</span>
                     </button>
-                  )}
+                    {currentTag && (
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === "hashtag"}
+                        className={`feed-tab-btn ${activeTab === "hashtag" ? "active" : ""}`}
+                      >
+                        <FiTag size={15} aria-hidden="true" /> <span>#{currentTag}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Discovery Feed Stream */}
               {error ? (
-                <div className="text-center py-5 px-3 rounded-4 bg-card border shadow-sm">
-                  <div className="text-danger mb-2">
-                    <FiAlertCircle size={36} />
+                <div className="text-center py-4 px-3 rounded-4 bg-card border shadow-sm">
+                  <div className="text-danger mb-2" aria-hidden="true">
+                    <FiAlertCircle size={32} />
                   </div>
                   <h5 className="fw-bold mb-1 text-body">Couldn't load Explore</h5>
                   <p className="text-muted small mb-3">Something went wrong while loading discovery content.</p>
@@ -378,8 +380,13 @@ export default function Explore() {
                 </div>
               ) : trendingPosts.length === 0 ? (
                 <EmptyState
-                  title={currentTag ? `No posts with #${currentTag}` : "No trending posts right now"}
-                  message="Be the first to share an insight about this topic with the community!"
+                  icon={<FiTrendingUp size={32} className="text-primary" />}
+                  title={currentTag ? `No posts with #${currentTag}` : "No trending topics yet"}
+                  message={
+                    currentTag
+                      ? "Be the first to share an insight about this topic with the community."
+                      : "Popular topics will appear as the community grows."
+                  }
                   actionText="Create Post"
                   actionLink="/create-post"
                 />
@@ -394,72 +401,113 @@ export default function Explore() {
 
             {/* Discovery Sidebar Widgets Column */}
             <Col lg={4}>
-              {/* Trending Hashtags Widget */}
-              <div className="bg-card p-3.5 rounded-4 border shadow-sm mb-4">
-                <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
-                  <FiTrendingUp className="text-primary" /> Trending Hashtags
-                </h6>
-                <div className="d-flex flex-column gap-1.5">
+              <div className="explore-sidebar-stack d-flex flex-column gap-3">
+                {/* Trending Hashtags Widget */}
+                <div className="bg-card p-3 rounded-4 border shadow-sm explore-widget-card">
+                  <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
+                    <FiTrendingUp className="text-primary" aria-hidden="true" /> Trending Hashtags
+                  </h6>
                   {trendingTags.length === 0 ? (
-                    <p className="text-muted small mb-0">No trending topics yet.</p>
-                  ) : (
-                    trendingTags.map((tag) => (
-                      <div
-                        key={tag.tag}
-                        className="d-flex justify-content-between align-items-center p-2 rounded-3 hover-bg cursor-pointer"
-                        onClick={() => handleTagClick(tag.tag)}
-                      >
-                        <div>
-                          <div className="fw-semibold small text-primary">#{tag.tag}</div>
-                          <span className="text-muted" style={{ fontSize: "11px" }}>
-                            {tag.count} {tag.count === 1 ? "post" : "posts"}
-                          </span>
-                        </div>
-                        <Badge bg="primary-subtle" text="primary" className="border-0 px-2 py-1">
-                          Trending
-                        </Badge>
+                    <div className="explore-widget-empty text-center py-3 px-2">
+                      <div className="text-primary mb-2 opacity-75" aria-hidden="true">
+                        <FiTag size={22} />
                       </div>
-                    ))
+                      <div className="small fw-semibold text-body mb-1">No trending topics yet</div>
+                      <p className="text-muted mb-0" style={{ fontSize: "12.5px", lineHeight: 1.55 }}>
+                        Popular topics will appear as the community grows.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="d-flex flex-column gap-1">
+                      {trendingTags.map((tag) => (
+                        <button
+                          key={tag.tag}
+                          type="button"
+                          className="ph-trending-item d-flex justify-content-between align-items-center p-2 rounded-3 border-0 bg-transparent text-start w-100"
+                          onClick={() => handleTagClick(tag.tag)}
+                          aria-label={`Explore hashtag ${tag.tag}`}
+                        >
+                          <div>
+                            <div className="fw-semibold small text-primary">#{tag.tag}</div>
+                            <span className="text-muted" style={{ fontSize: "11px" }}>
+                              {tag.count} {tag.count === 1 ? "post" : "posts"}
+                            </span>
+                          </div>
+                          <Badge bg="primary-subtle" text="primary" className="border-0 px-2 py-1">
+                            Trending
+                          </Badge>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* Suggested Creators Widget */}
-              {suggestedUsers.length > 0 && (
-                <div className="bg-card p-3.5 rounded-4 border shadow-sm">
-                  <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
-                    <FiUsers className="text-primary" /> Popular Creators
-                  </h6>
-                  <div className="d-flex flex-column gap-2.5">
-                    {suggestedUsers.map((u) => (
-                      <div key={u._id} className="d-flex align-items-center justify-content-between gap-2">
-                        <Link to={`/profile/${u.username}`} className="d-flex align-items-center gap-2 text-decoration-none text-body overflow-hidden">
-                          {u.avatar ? (
-                            <img src={u.avatar} alt={u.name} className="rounded-circle object-fit-cover flex-shrink-0" style={{ width: 36, height: 36 }} />
-                          ) : (
-                            <div className="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center small flex-shrink-0" style={{ width: 36, height: 36 }}>
-                              {(u.name || "U")[0].toUpperCase()}
+                {/* Suggested Creators Widget */}
+                {suggestedUsers.length > 0 ? (
+                  <div className="bg-card p-3 rounded-4 border shadow-sm explore-widget-card">
+                    <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
+                      <FiUsers className="text-primary" aria-hidden="true" /> Popular Creators
+                    </h6>
+                    <div className="d-flex flex-column gap-2.5">
+                      {suggestedUsers.map((u) => (
+                        <div key={u._id} className="d-flex align-items-center justify-content-between gap-2">
+                          <Link
+                            to={`/profile/${u.username}`}
+                            className="d-flex align-items-center gap-2 text-decoration-none text-body overflow-hidden"
+                          >
+                            {u.avatar ? (
+                              <img
+                                src={u.avatar}
+                                alt=""
+                                className="rounded-circle object-fit-cover flex-shrink-0"
+                                style={{ width: 36, height: 36 }}
+                              />
+                            ) : (
+                              <div
+                                className="post-author-avatar rounded-circle flex-shrink-0"
+                                style={{ width: 36, height: 36, fontSize: "0.7rem" }}
+                                aria-hidden="true"
+                              >
+                                {(u.name || "U").slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="overflow-hidden">
+                              <div className="fw-semibold small text-truncate">{u.name}</div>
+                              <div className="text-muted small text-truncate" style={{ fontSize: "11px" }}>
+                                @{u.username}
+                              </div>
                             </div>
-                          )}
-                          <div className="overflow-hidden">
-                            <div className="fw-semibold small text-truncate">{u.name}</div>
-                            <div className="text-muted small text-truncate" style={{ fontSize: "11px" }}>@{u.username}</div>
-                          </div>
-                        </Link>
-                        <Button
-                          variant={u.isFollowing ? "outline-secondary" : "outline-primary"}
-                          size="sm"
-                          className="rounded-pill py-0.5 px-2.5 small flex-shrink-0"
-                          onClick={() => handleToggleFollow(u._id)}
-                          aria-label={u.isFollowing ? `Unfollow ${u.name}` : `Follow ${u.name}`}
-                        >
-                          {u.isFollowing ? <FiUserCheck size={13} /> : <FiUserPlus size={13} />}
-                        </Button>
-                      </div>
-                    ))}
+                          </Link>
+                          <Button
+                            variant={u.isFollowing ? "outline-secondary" : "outline-primary"}
+                            size="sm"
+                            className="ph-follow-btn rounded-pill py-0.5 px-2.5 small flex-shrink-0"
+                            onClick={() => handleToggleFollow(u._id)}
+                            aria-label={u.isFollowing ? `Unfollow ${u.name}` : `Follow ${u.name}`}
+                          >
+                            {u.isFollowing ? <FiUserCheck size={13} /> : <FiUserPlus size={13} />}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="bg-card p-3 rounded-4 border shadow-sm explore-widget-card">
+                    <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
+                      <FiUsers className="text-primary" aria-hidden="true" /> Popular Creators
+                    </h6>
+                    <div className="explore-widget-empty text-center py-3 px-2">
+                      <div className="text-primary mb-2 opacity-75" aria-hidden="true">
+                        <FiUsers size={22} />
+                      </div>
+                      <div className="small fw-semibold text-body mb-1">No creators to show yet</div>
+                      <p className="text-muted mb-0" style={{ fontSize: "12.5px", lineHeight: 1.55 }}>
+                        Suggested creators will appear here as the community grows.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </Col>
           </Row>
         )}

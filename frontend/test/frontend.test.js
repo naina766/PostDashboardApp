@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { formatTimeAgo } from "../src/utils/timeAgo.js";
+import { getInitials } from "../src/utils/initials.js";
 
 describe("Frontend Utilities & Contracts Suite", () => {
   describe("timeAgo utility", () => {
@@ -27,6 +28,21 @@ describe("Frontend Utilities & Contracts Suite", () => {
     it("should return empty string on null or undefined input", () => {
       assert.equal(formatTimeAgo(null), "");
       assert.equal(formatTimeAgo(undefined), "");
+    });
+  });
+
+  describe("getInitials utility", () => {
+    it("should return two initials from a full name", () => {
+      assert.equal(getInitials("Naina Varshney"), "NV");
+    });
+
+    it("should return up to two characters for a single name", () => {
+      assert.equal(getInitials("Alex"), "AL");
+    });
+
+    it("should fall back when name is empty", () => {
+      assert.equal(getInitials(""), "U");
+      assert.equal(getInitials(null), "U");
     });
   });
 

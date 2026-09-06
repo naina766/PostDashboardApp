@@ -5,6 +5,22 @@ import { FiUser, FiMail, FiLock, FiShare2, FiCheck, FiEye, FiEyeOff } from "reac
 import { signup } from "../services/auth";
 import { useToast } from "../context/ToastContext";
 
+function getFriendlySignupError(err) {
+  const status = err?.response?.status;
+  const apiMessage = err?.response?.data?.message;
+
+  if (status === 409) {
+    return "An account with this email already exists.";
+  }
+  if (!err?.response) {
+    return "Unable to connect. Please check your internet connection.";
+  }
+  if (apiMessage && !/axios|networkerror|internal server/i.test(apiMessage)) {
+    return apiMessage;
+  }
+  return "Failed to create account. Please try again.";
+}
+
 export default function Signup() {
   const [form, setForm] = useState({
     name: "",
@@ -21,7 +37,7 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return; // Prevent duplicate submissions
+    if (loading) return;
 
     setServerError("");
 
@@ -56,8 +72,7 @@ export default function Signup() {
       showToast("Account created successfully! Please sign in.", "success");
       navigate("/login");
     } catch (err) {
-      const errMsg =
-        err.response?.data?.message || err.message || "Failed to create account. Please try again.";
+      const errMsg = getFriendlySignupError(err);
       setServerError(errMsg);
       showToast(errMsg, "danger");
     } finally {
@@ -66,58 +81,71 @@ export default function Signup() {
   };
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper page-enter-animate">
       <div className="auth-card">
         <div className="text-center mb-4">
           <div className="auth-brand-badge">
-            <FiShare2 /> PostHub
+            <FiShare2 aria-hidden="true" /> PostHub
           </div>
-          <h2 className="fw-bold mb-1">Create your account</h2>
-          <p className="text-muted small">Join our community and share what's on your mind</p>
+          <h1 className="h3 fw-bold mb-1">Create your account</h1>
+          <p className="text-muted small mb-0">Join PostHub and start sharing ideas</p>
         </div>
 
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit} noValidate>
           {serverError && (
-            <Alert variant="danger" className="py-2 small mb-3 border-0 shadow-sm" onClose={() => setServerError("")} dismissible>
+            <Alert
+              variant="danger"
+              className="py-2 small mb-3 border-0"
+              onClose={() => setServerError("")}
+              dismissible
+              role="alert"
+            >
               {serverError}
             </Alert>
           )}
 
           <Form.Group className="mb-3" controlId="signupName">
-            <Form.Label className="d-flex align-items-center gap-1">
-              <FiUser className="text-muted" /> Full Name
-            </Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="e.g. Naina Varshney"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-              disabled={loading}
-              aria-label="Full name"
-            />
+            <Form.Label>Full name</Form.Label>
+            <InputGroup>
+              <InputGroup.Text className="bg-transparent">
+                <FiUser className="text-muted" aria-hidden="true" />
+              </InputGroup.Text>
+              <Form.Control
+                type="text"
+                placeholder="Your name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+                disabled={loading}
+                autoComplete="name"
+              />
+            </InputGroup>
           </Form.Group>
 
           <Form.Group className="mb-3" controlId="signupEmail">
-            <Form.Label className="d-flex align-items-center gap-1">
-              <FiMail className="text-muted" /> Email Address
-            </Form.Label>
-            <Form.Control
-              type="email"
-              placeholder="name@example.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-              disabled={loading}
-              aria-label="Email address"
-            />
+            <Form.Label>Email</Form.Label>
+            <InputGroup>
+              <InputGroup.Text className="bg-transparent">
+                <FiMail className="text-muted" aria-hidden="true" />
+              </InputGroup.Text>
+              <Form.Control
+                type="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+                disabled={loading}
+                autoComplete="email"
+              />
+            </InputGroup>
           </Form.Group>
 
           <Form.Group className="mb-3" controlId="signupPassword">
-            <Form.Label className="d-flex align-items-center gap-1">
-              <FiLock className="text-muted" /> Password
-            </Form.Label>
+            <Form.Label>Password</Form.Label>
             <InputGroup>
+              <InputGroup.Text className="bg-transparent">
+                <FiLock className="text-muted" aria-hidden="true" />
+              </InputGroup.Text>
               <Form.Control
                 type={showPassword ? "text" : "password"}
                 placeholder="At least 6 characters"
@@ -125,7 +153,7 @@ export default function Signup() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
                 disabled={loading}
-                aria-label="Password"
+                autoComplete="new-password"
               />
               <Button
                 variant="outline-secondary"
@@ -135,16 +163,21 @@ export default function Signup() {
                 title={showPassword ? "Hide password" : "Show password"}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
+                {showPassword ? (
+                  <FiEyeOff aria-hidden="true" />
+                ) : (
+                  <FiEye aria-hidden="true" />
+                )}
               </Button>
             </InputGroup>
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="signupConfirmPassword">
-            <Form.Label className="d-flex align-items-center gap-1">
-              <FiCheck className="text-muted" /> Confirm Password
-            </Form.Label>
+            <Form.Label>Confirm password</Form.Label>
             <InputGroup>
+              <InputGroup.Text className="bg-transparent">
+                <FiCheck className="text-muted" aria-hidden="true" />
+              </InputGroup.Text>
               <Form.Control
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
@@ -152,7 +185,7 @@ export default function Signup() {
                 onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
                 required
                 disabled={loading}
-                aria-label="Confirm password"
+                autoComplete="new-password"
               />
               <Button
                 variant="outline-secondary"
@@ -162,7 +195,11 @@ export default function Signup() {
                 title={showConfirmPassword ? "Hide password" : "Show password"}
                 aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               >
-                {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                {showConfirmPassword ? (
+                  <FiEyeOff aria-hidden="true" />
+                ) : (
+                  <FiEye aria-hidden="true" />
+                )}
               </Button>
             </InputGroup>
           </Form.Group>
@@ -174,7 +211,8 @@ export default function Signup() {
           >
             {loading ? (
               <>
-                <Spinner size="sm" animation="border" className="me-2" /> Creating account...
+                <Spinner size="sm" animation="border" className="me-2" aria-hidden="true" />{" "}
+                Creating account...
               </>
             ) : (
               "Create Account"
@@ -185,7 +223,7 @@ export default function Signup() {
         <p className="text-center text-muted small mb-0">
           Already have an account?{" "}
           <Link to="/login" className="text-primary fw-semibold text-decoration-none">
-            Login
+            Sign in
           </Link>
         </p>
       </div>

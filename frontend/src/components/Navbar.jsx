@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Navbar, Nav, Container, Button, Badge } from "react-bootstrap";
-import { 
-  FiShare2, 
-  FiFileText, 
+import { Navbar, Container, Button, Badge } from "react-bootstrap";
+import {
+  FiShare2,
+  FiFileText,
   FiCompass,
   FiBookmark,
   FiBell,
   FiBarChart2,
   FiShield,
-  FiPlusSquare, 
-  FiUser, 
-  FiLogOut, 
-  FiSun, 
+  FiPlusSquare,
+  FiUser,
+  FiLogOut,
+  FiSun,
   FiMoon,
   FiSettings,
-  FiSearch
+  FiSearch,
+  FiX,
 } from "react-icons/fi";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/ThemeContext";
 import { getUnreadCount } from "../services/notifications";
+import { getInitials } from "../utils/initials";
 
 export default function AppNavbar() {
   const { user, logout } = useUser();
@@ -28,7 +30,6 @@ export default function AppNavbar() {
   const [expanded, setExpanded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [navSearch, setNavSearch] = useState("");
-
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleSearchSubmit = (e) => {
@@ -55,12 +56,28 @@ export default function AppNavbar() {
       }
     };
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30000); // 30s polling
+    const interval = setInterval(fetchUnread, 30000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!drawerOpen) return undefined;
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setDrawerOpen(false);
+    };
+
+    document.body.classList.add("drawer-open");
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.classList.remove("drawer-open");
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [drawerOpen]);
 
   const handleLogout = () => {
     logout();
@@ -78,38 +95,55 @@ export default function AppNavbar() {
 
   return (
     <>
-      <Navbar 
-        expanded={expanded} 
-        onToggle={setExpanded} 
-        expand="lg" 
+      <Navbar
+        expanded={expanded}
+        onToggle={setExpanded}
+        expand="lg"
         className="posthub-navbar sticky-top"
       >
         <Container fluid="xl">
-          <Navbar.Brand as={Link} to="/dashboard" onClick={handleNavClick} className="posthub-brand d-flex align-items-center gap-2">
-            <FiShare2 className="brand-icon" />
+          <Navbar.Brand
+            as={Link}
+            to={user ? "/dashboard" : "/"}
+            onClick={handleNavClick}
+            className="posthub-brand d-flex align-items-center gap-2"
+          >
+            <FiShare2 className="brand-icon" aria-hidden="true" />
             <span>PostHub</span>
           </Navbar.Brand>
 
-          {/* Global Search Bar on Desktop (220-280px) */}
-          <form onSubmit={handleSearchSubmit} className="nav-search-form d-none d-md-flex align-items-center position-relative ms-2 ms-xl-3 me-2 flex-grow-1" role="search">
-            <FiSearch className="position-absolute start-0 ms-3 text-muted pointer-events-none" size={15} />
+          <form
+            onSubmit={handleSearchSubmit}
+            className="nav-search-form d-none d-md-flex align-items-center position-relative ms-2 ms-xl-3 me-2 flex-grow-1"
+            role="search"
+          >
+            <FiSearch
+              className="position-absolute start-0 ms-3 text-muted pointer-events-none"
+              size={15}
+              aria-hidden="true"
+            />
             <input
               type="search"
               className="form-control nav-search-input"
               placeholder="Search creators, #tags..."
               value={navSearch}
               onChange={(e) => setNavSearch(e.target.value)}
-              aria-label="Global Search"
+              aria-label="Search PostHub"
             />
           </form>
 
-          {/* Mobile Right Controls: Notifications, Theme Toggle, Hamburger Menu */}
           <div className="d-flex align-items-center gap-2 d-lg-none ms-auto">
             {user && (
-              <Link to="/notifications" onClick={handleNavClick} className="nav-icon-btn" aria-label="Open notifications" title="Open notifications">
-                <FiBell size={18} />
+              <Link
+                to="/notifications"
+                onClick={handleNavClick}
+                className="nav-icon-btn"
+                aria-label="Open notifications"
+                title="Open notifications"
+              >
+                <FiBell size={18} aria-hidden="true" />
                 {unreadCount > 0 && (
-                  <span className="badge-notification-dot"></span>
+                  <span className="badge-notification-dot" aria-hidden="true"></span>
                 )}
               </Link>
             )}
@@ -120,15 +154,31 @@ export default function AppNavbar() {
               aria-label="Toggle theme"
               type="button"
             >
-              {theme === "light" ? <FiMoon size={16} /> : <FiSun size={16} />}
+              {theme === "light" ? (
+                <FiMoon size={16} aria-hidden="true" />
+              ) : (
+                <FiSun size={16} aria-hidden="true" />
+              )}
             </button>
             <button
               type="button"
               className="nav-icon-btn text-body"
               onClick={() => setDrawerOpen(true)}
-              aria-label="Open mobile navigation drawer"
+              aria-label="Open navigation menu"
+              aria-expanded={drawerOpen}
+              aria-controls="mobile-nav-drawer"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <line x1="3" y1="12" x2="21" y2="12"></line>
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -136,9 +186,7 @@ export default function AppNavbar() {
             </button>
           </div>
 
-          {/* Desktop Global Utility Controls */}
-          <div className="d-none d-lg-flex align-items-center gap-2.5 ms-auto">
-            {/* Quick Notifications Bell */}
+          <div className="d-none d-lg-flex align-items-center gap-2 ms-auto">
             {user && (
               <Link
                 to="/notifications"
@@ -146,14 +194,13 @@ export default function AppNavbar() {
                 title="Open notifications"
                 aria-label="Open notifications"
               >
-                <FiBell size={18} />
+                <FiBell size={18} aria-hidden="true" />
                 {unreadCount > 0 && (
-                  <span className="badge-notification-dot"></span>
+                  <span className="badge-notification-dot" aria-hidden="true"></span>
                 )}
               </Link>
             )}
 
-            {/* Theme Toggle Button (38px compact icon button) */}
             <button
               onClick={toggleTheme}
               className="theme-toggle-btn"
@@ -161,7 +208,11 @@ export default function AppNavbar() {
               aria-label="Toggle theme"
               type="button"
             >
-              {theme === "light" ? <FiMoon size={16} /> : <FiSun size={16} />}
+              {theme === "light" ? (
+                <FiMoon size={16} aria-hidden="true" />
+              ) : (
+                <FiSun size={16} aria-hidden="true" />
+              )}
             </button>
 
             {user ? (
@@ -173,7 +224,7 @@ export default function AppNavbar() {
                   title="Create a new post"
                   aria-label="Create post"
                 >
-                  <FiPlusSquare size={15} />
+                  <FiPlusSquare size={15} aria-hidden="true" />
                   <span>Create Post</span>
                 </Button>
 
@@ -186,19 +237,26 @@ export default function AppNavbar() {
                   {user.avatar ? (
                     <img
                       src={user.avatar}
-                      alt={user.name}
+                      alt=""
                       className="rounded-circle object-fit-cover"
                       style={{ width: "34px", height: "34px" }}
+                      onError={(e) => {
+                        e.currentTarget.dataset.broken = "true";
+                      }}
                     />
                   ) : (
                     <div
                       className="post-author-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold"
-                      style={{ width: "34px", height: "34px", fontSize: "14px" }}
+                      style={{ width: "34px", height: "34px", fontSize: "12px" }}
+                      aria-hidden="true"
                     >
-                      {user.name ? user.name[0].toUpperCase() : "U"}
+                      {getInitials(user.name)}
                     </div>
                   )}
-                  <span className="d-none d-xl-inline small fw-semibold text-truncate" style={{ maxWidth: 110 }}>
+                  <span
+                    className="d-none d-xl-inline small fw-semibold text-truncate"
+                    style={{ maxWidth: 110 }}
+                  >
                     {user.name?.split(" ")[0]}
                   </span>
                 </Link>
@@ -211,7 +269,7 @@ export default function AppNavbar() {
                   title="Sign out"
                   aria-label="Sign out"
                 >
-                  <FiLogOut size={16} />
+                  <FiLogOut size={16} aria-hidden="true" />
                 </Button>
               </>
             ) : (
@@ -240,28 +298,30 @@ export default function AppNavbar() {
         </Container>
       </Navbar>
 
-      {/* Mobile Navigation Slide Drawer (Section 38: 200ms slide with backdrop) */}
-      <div 
+      <div
         className={`mobile-drawer-overlay ${drawerOpen ? "open" : ""}`}
         onClick={() => setDrawerOpen(false)}
         aria-hidden={!drawerOpen}
       />
-      <aside 
+      <aside
+        id="mobile-nav-drawer"
         className={`mobile-drawer ${drawerOpen ? "open" : ""}`}
-        aria-label="Mobile navigation drawer"
+        aria-label="Mobile navigation"
         aria-hidden={!drawerOpen}
+        role="dialog"
+        aria-modal={drawerOpen}
       >
         <div className="mobile-drawer-header">
           <div className="d-flex align-items-center gap-2 fw-bold text-primary fs-5">
-            <FiShare2 /> PostHub
+            <FiShare2 aria-hidden="true" /> PostHub
           </div>
           <button
             type="button"
-            className="btn btn-sm text-muted p-1 border-0"
+            className="btn btn-sm text-muted p-1 border-0 d-inline-flex align-items-center justify-content-center"
             onClick={() => setDrawerOpen(false)}
-            aria-label="Close navigation drawer"
+            aria-label="Close navigation menu"
           >
-            ✕
+            <FiX size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -270,22 +330,25 @@ export default function AppNavbar() {
             <Link
               to={`/profile/${user.username || ""}`}
               onClick={handleNavClick}
-              className="d-flex align-items-center gap-2.5 p-2 rounded-3 text-decoration-none text-body bg-body-secondary mb-2"
+              className="d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none text-body bg-body-secondary mb-2"
             >
               {user.avatar ? (
                 <img
                   src={user.avatar}
-                  alt={user.name}
+                  alt=""
                   className="rounded-circle object-fit-cover"
                   style={{ width: 38, height: 38 }}
+                  onError={(e) => {
+                    e.currentTarget.dataset.broken = "true";
+                  }}
                 />
               ) : (
                 <div
                   className="post-author-avatar rounded-circle flex-shrink-0"
-                  style={{ width: 38, height: 38, fontSize: "0.95rem" }}
+                  style={{ width: 38, height: 38, fontSize: "0.8rem" }}
                   aria-hidden="true"
                 >
-                  {(user.name || "U").charAt(0).toUpperCase()}
+                  {getInitials(user.name)}
                 </div>
               )}
               <div className="overflow-hidden">
@@ -302,7 +365,7 @@ export default function AppNavbar() {
             onClick={handleNavClick}
             className={({ isActive }) => `mobile-drawer-link ${isActive ? "active" : ""}`}
           >
-            <FiFileText size={18} /> <span>Home Feed</span>
+            <FiFileText size={18} aria-hidden="true" /> <span>Home Feed</span>
           </NavLink>
 
           <NavLink
@@ -310,7 +373,7 @@ export default function AppNavbar() {
             onClick={handleNavClick}
             className={({ isActive }) => `mobile-drawer-link ${isActive ? "active" : ""}`}
           >
-            <FiCompass size={18} /> <span>Explore</span>
+            <FiCompass size={18} aria-hidden="true" /> <span>Explore</span>
           </NavLink>
 
           <NavLink
@@ -318,7 +381,7 @@ export default function AppNavbar() {
             onClick={handleNavClick}
             className={({ isActive }) => `mobile-drawer-link ${isActive ? "active" : ""}`}
           >
-            <FiBell size={18} /> <span>Notifications</span>
+            <FiBell size={18} aria-hidden="true" /> <span>Notifications</span>
             {unreadCount > 0 && (
               <Badge bg="danger" pill className="ms-auto">
                 {unreadCount}
@@ -331,32 +394,44 @@ export default function AppNavbar() {
             onClick={handleNavClick}
             className={({ isActive }) => `mobile-drawer-link ${isActive ? "active" : ""}`}
           >
-            <FiBookmark size={18} /> <span>Saved Posts</span>
+            <FiBookmark size={18} aria-hidden="true" /> <span>Saved Posts</span>
           </NavLink>
 
           <NavLink
-            to="/creator"
+            to="/creator-analytics"
             onClick={handleNavClick}
             className={({ isActive }) => `mobile-drawer-link ${isActive ? "active" : ""}`}
           >
-            <FiBarChart2 size={18} /> <span>Creator Analytics</span>
+            <FiBarChart2 size={18} aria-hidden="true" /> <span>Creator Analytics</span>
           </NavLink>
+
+          {user && (
+            <NavLink
+              to={`/profile/${user.username || ""}`}
+              onClick={handleNavClick}
+              className={({ isActive }) => `mobile-drawer-link ${isActive ? "active" : ""}`}
+            >
+              <FiUser size={18} aria-hidden="true" /> <span>My Profile</span>
+            </NavLink>
+          )}
 
           <NavLink
             to="/settings"
             onClick={handleNavClick}
             className={({ isActive }) => `mobile-drawer-link ${isActive ? "active" : ""}`}
           >
-            <FiSettings size={18} /> <span>Settings</span>
+            <FiSettings size={18} aria-hidden="true" /> <span>Settings</span>
           </NavLink>
 
           {isAdminOrMod && (
             <NavLink
               to="/admin"
               onClick={handleNavClick}
-              className={({ isActive }) => `mobile-drawer-link text-warning ${isActive ? "active" : ""}`}
+              className={({ isActive }) =>
+                `mobile-drawer-link text-warning ${isActive ? "active" : ""}`
+              }
             >
-              <FiShield size={18} /> <span>Admin Console</span>
+              <FiShield size={18} aria-hidden="true" /> <span>Admin</span>
             </NavLink>
           )}
 
@@ -368,7 +443,7 @@ export default function AppNavbar() {
               variant="primary"
               className="btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2 py-2 rounded-pill shadow-sm"
             >
-              <FiPlusSquare size={16} />
+              <FiPlusSquare size={16} aria-hidden="true" />
               <span>Create Post</span>
             </Button>
 
@@ -379,14 +454,28 @@ export default function AppNavbar() {
                 onClick={handleLogout}
                 className="w-100 d-flex align-items-center justify-content-center gap-2 py-1.5 mt-1"
               >
-                <FiLogOut size={15} /> <span>Sign Out</span>
+                <FiLogOut size={15} aria-hidden="true" /> <span>Sign Out</span>
               </Button>
             ) : (
               <div className="d-flex gap-2 mt-1">
-                <Button as={Link} to="/login" onClick={handleNavClick} variant="outline-primary" size="sm" className="w-50 rounded-pill">
+                <Button
+                  as={Link}
+                  to="/login"
+                  onClick={handleNavClick}
+                  variant="outline-primary"
+                  size="sm"
+                  className="w-50 rounded-pill"
+                >
                   Log In
                 </Button>
-                <Button as={Link} to="/signup" onClick={handleNavClick} variant="primary" size="sm" className="btn-primary-custom w-50 rounded-pill">
+                <Button
+                  as={Link}
+                  to="/signup"
+                  onClick={handleNavClick}
+                  variant="primary"
+                  size="sm"
+                  className="btn-primary-custom w-50 rounded-pill"
+                >
                   Sign Up
                 </Button>
               </div>

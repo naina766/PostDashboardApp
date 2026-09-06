@@ -18,27 +18,32 @@ export default class ErrorBoundary extends React.Component {
 
   handleReset = () => {
     this.setState({ hasError: false });
-    window.location.href = "/";
+    window.location.href = "/dashboard";
   };
 
   render() {
     if (this.state.hasError) {
       return (
-        <Container className="d-flex flex-column align-items-center justify-content-center min-vh-100 text-center py-5">
-          <div className="empty-state" style={{ maxWidth: 500 }}>
-            <div className="empty-state-icon text-danger">
+        <Container className="d-flex flex-column align-items-center justify-content-center min-vh-100 text-center py-5 page-enter-animate">
+          <div
+            className="empty-state"
+            style={{ maxWidth: 480 }}
+            role="alert"
+            aria-live="assertive"
+          >
+            <div className="empty-state-icon text-danger" aria-hidden="true">
               <FiAlertTriangle />
             </div>
-            <h3 className="empty-state-title">Something went wrong</h3>
+            <h1 className="empty-state-title h3">Something went wrong</h1>
             <p className="empty-state-desc">
-              An unexpected error occurred. Please refresh the page or try again.
+              We couldn&apos;t load this content. Refresh the page or return to your feed.
             </p>
             <Button
               variant="primary"
               className="btn-primary-custom d-inline-flex align-items-center gap-2"
               onClick={this.handleReset}
             >
-              <FiRefreshCw /> Try Again
+              <FiRefreshCw aria-hidden="true" /> Try Again
             </Button>
           </div>
         </Container>
