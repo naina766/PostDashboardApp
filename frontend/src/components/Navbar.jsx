@@ -1,9 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Navbar, Nav, Container, Button } from "react-bootstrap";
+import { Navbar, Nav, Container, Button, Badge } from "react-bootstrap";
 import { 
   FiShare2, 
   FiFileText, 
+  FiCompass,
+  FiBookmark,
+  FiBell,
+  FiBarChart2,
+  FiShield,
   FiPlusSquare, 
   FiUser, 
   FiLogOut, 
@@ -12,12 +17,35 @@ import {
 } from "react-icons/fi";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/ThemeContext";
+import { getUnreadCount } from "../services/notifications";
 
 export default function AppNavbar() {
   const { user, logout } = useUser();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await getUnreadCount();
+        if (isMounted) {
+          setUnreadCount(res.data.data?.unreadCount || 0);
+        }
+      } catch {
+        // Silently ignore
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000); // 30s polling
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -29,6 +57,8 @@ export default function AppNavbar() {
     setExpanded(false);
   };
 
+  const isAdminOrMod = user && ["admin", "moderator"].includes(user.role);
+
   return (
     <Navbar 
       expanded={expanded} 
@@ -36,12 +66,20 @@ export default function AppNavbar() {
       expand="lg" 
       className="posthub-navbar sticky-top"
     >
-      <Container>
-        <Navbar.Brand as={Link} to="/dashboard" onClick={handleNavClick} className="posthub-brand">
-          <FiShare2 className="text-primary" /> PostHub
+      <Container fluid="xl">
+        <Navbar.Brand as={Link} to="/dashboard" onClick={handleNavClick} className="posthub-brand d-flex align-items-center gap-2">
+          <FiShare2 className="brand-icon" />
+          <span>PostHub</span>
+          <span className="badge-v2">V2</span>
         </Navbar.Brand>
 
         <div className="d-flex align-items-center gap-2 d-lg-none ms-auto me-2">
+          <Link to="/notifications" onClick={handleNavClick} className="position-relative text-body px-2" aria-label="Notifications">
+            <FiBell size={20} />
+            {unreadCount > 0 && (
+              <span className="badge-notification-dot"></span>
+            )}
+          </Link>
           <button
             onClick={toggleTheme}
             className="theme-toggle-btn"
@@ -63,58 +101,127 @@ export default function AppNavbar() {
               onClick={handleNavClick} 
               className="posthub-nav-link"
             >
-              <FiFileText /> Social Feed
+              <FiFileText /> Feed
             </Nav.Link>
             <Nav.Link 
               as={NavLink} 
-              to="/create-post" 
+              to="/explore" 
               onClick={handleNavClick} 
               className="posthub-nav-link"
             >
-              <FiPlusSquare /> Create Post
+              <FiCompass /> Explore
             </Nav.Link>
             <Nav.Link 
               as={NavLink} 
-              to="/profile" 
+              to="/saved" 
               onClick={handleNavClick} 
               className="posthub-nav-link"
             >
-              <FiUser /> Profile
+              <FiBookmark /> Saved
             </Nav.Link>
+            <Nav.Link 
+              as={NavLink} 
+              to="/notifications" 
+              onClick={handleNavClick} 
+              className="posthub-nav-link position-relative"
+            >
+              <FiBell /> Notifications
+              {unreadCount > 0 && (
+                <Badge bg="danger" pill className="ms-1 px-1.5 py-0.5 small">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </Badge>
+              )}
+            </Nav.Link>
+            <Nav.Link 
+              as={NavLink} 
+              to="/analytics" 
+              onClick={handleNavClick} 
+              className="posthub-nav-link"
+            >
+              <FiBarChart2 /> Analytics
+            </Nav.Link>
+            {isAdminOrMod && (
+              <Nav.Link 
+                as={NavLink} 
+                to="/admin" 
+                onClick={handleNavClick} 
+                className="posthub-nav-link text-warning"
+              >
+                <FiShield /> Admin
+              </Nav.Link>
+            )}
           </Nav>
 
-          <div className="d-flex align-items-center gap-3 mt-3 mt-lg-0">
-            <button
-              onClick={toggleTheme}
-              className="theme-toggle-btn d-none d-lg-flex"
-              title={`Switch to ${theme === "light" ? "Dark" : "Light"} mode`}
-              type="button"
-            >
-              {theme === "light" ? (
-                <>
-                  <FiMoon /> Dark
-                </>
-              ) : (
-                <>
-                  <FiSun /> Light
-                </>
-              )}
-            </button>
+          <div className="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+            {user ? (
+              <>
+                <Button
+                  as={Link}
+                  to="/create-post"
+                  onClick={handleNavClick}
+                  variant="primary"
+                  size="sm"
+                  className="d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill"
+                >
+                  <FiPlusSquare /> Create Post
+                </Button>
 
-            {user && (
-              <span className="text-muted small d-none d-xl-inline">
-                Signed in as <strong className="text-body">{user.name}</strong>
-              </span>
+                <Nav.Link
+                  as={Link}
+                  to="/profile"
+                  onClick={handleNavClick}
+                  className="d-flex align-items-center gap-2 p-1 text-decoration-none text-body"
+                >
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="rounded-circle object-fit-cover"
+                      style={{ width: "32px", height: "32px" }}
+                    />
+                  ) : (
+                    <div
+                      className="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center bg-primary text-white font-weight-bold"
+                      style={{ width: "32px", height: "32px", fontSize: "14px" }}
+                    >
+                      {user.name ? user.name[0].toUpperCase() : "U"}
+                    </div>
+                  )}
+                  <span className="d-none d-xl-inline small fw-medium">{user.name}</span>
+                </Nav.Link>
+
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="d-flex align-items-center gap-1 px-2.5 py-1"
+                  title="Sign out"
+                >
+                  <FiLogOut />
+                </Button>
+              </>
+            ) : (
+              <div className="d-flex align-items-center gap-2">
+                <Button
+                  as={Link}
+                  to="/login"
+                  variant="outline-primary"
+                  size="sm"
+                  className="rounded-pill px-3"
+                >
+                  Log In
+                </Button>
+                <Button
+                  as={Link}
+                  to="/signup"
+                  variant="primary"
+                  size="sm"
+                  className="rounded-pill px-3"
+                >
+                  Sign Up
+                </Button>
+              </div>
             )}
-
-            <Button
-              variant="outline-danger"
-              size="sm"
-              onClick={handleLogout}
-              className="d-flex align-items-center gap-1 px-3 py-1"
-            >
-              <FiLogOut /> Logout
-            </Button>
           </div>
         </Navbar.Collapse>
       </Container>
