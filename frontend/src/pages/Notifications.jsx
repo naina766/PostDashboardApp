@@ -120,7 +120,7 @@ export default function Notifications() {
     return (
       <div
         key={n._id}
-        className={`list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between gap-3 border-0 border-bottom ${
+        className={`list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between gap-3 border-0 border-bottom notification-item-animate ${
           !n.read ? "bg-primary-subtle" : ""
         }`}
         onClick={() => !n.read && handleMarkAsRead(n._id)}

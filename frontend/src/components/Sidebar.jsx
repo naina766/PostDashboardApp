@@ -14,6 +14,7 @@ import {
   FiUserPlus,
   FiUserCheck,
   FiActivity,
+  FiBell
 } from "react-icons/fi";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
@@ -29,12 +30,41 @@ export function LeftSidebar() {
   return (
     <aside className="ph-left-sidebar d-none d-lg-flex flex-column gap-3 sticky-top" style={{ top: "80px" }}>
       <Card className="border-0 shadow-sm rounded-4 p-3 bg-card">
+        {/* User Profile Mini Header */}
+        <Link
+          to={`/profile/${user.username || ""}`}
+          className="d-flex align-items-center gap-2.5 p-2 rounded-3 text-decoration-none text-body hover-bg mb-2"
+        >
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.name}
+              className="rounded-circle object-fit-cover flex-shrink-0"
+              style={{ width: 38, height: 38 }}
+            />
+          ) : (
+            <div
+              className="post-author-avatar rounded-circle flex-shrink-0"
+              style={{ width: 38, height: 38, fontSize: "0.95rem" }}
+              aria-hidden="true"
+            >
+              {(user.name || "U").charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="overflow-hidden">
+            <div className="fw-semibold text-truncate small">{user.name}</div>
+            <div className="text-muted text-truncate" style={{ fontSize: "0.75rem" }}>
+              @{user.username}
+            </div>
+          </div>
+        </Link>
+
         <nav className="d-flex flex-column gap-1" aria-label="Main Navigation">
           <NavLink
             to="/dashboard"
             end
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2.5 rounded-3 text-decoration-none fw-medium ${
+              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2 rounded-3 text-decoration-none fw-medium ${
                 isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
               }`
             }
@@ -46,13 +76,25 @@ export function LeftSidebar() {
           <NavLink
             to="/explore"
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2.5 rounded-3 text-decoration-none fw-medium ${
+              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2 rounded-3 text-decoration-none fw-medium ${
                 isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
               }`
             }
           >
             <FiCompass size={18} />
             <span>Explore</span>
+          </NavLink>
+
+          <NavLink
+            to="/notifications"
+            className={({ isActive }) =>
+              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2 rounded-3 text-decoration-none fw-medium ${
+                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
+              }`
+            }
+          >
+            <FiBell size={18} />
+            <span>Notifications</span>
           </NavLink>
 
           <NavLink

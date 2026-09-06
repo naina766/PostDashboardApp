@@ -53,6 +53,7 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
   // Save / Bookmark state
   const [saved, setSaved] = useState(Boolean(post.isSaved));
   const [savePending, setSavePending] = useState(false);
+  const [animateBookmark, setAnimateBookmark] = useState(false);
 
   // Poll state
   const [poll, setPoll] = useState(post.poll);
@@ -133,6 +134,8 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
     const prevSaved = saved;
     setSaved(!prevSaved);
     setSavePending(true);
+    setAnimateBookmark(true);
+    setTimeout(() => setAnimateBookmark(false), 350);
 
     try {
       const res = await toggleSave(post._id);
@@ -550,7 +553,7 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
           {/* Save / Bookmark */}
           <button
             type="button"
-            className={`post-action-btn ${saved ? "text-warning" : ""}`}
+            className={`post-action-btn ${saved ? "text-warning" : ""} ${animateBookmark ? "bookmark-pop" : ""}`}
             onClick={handleSaveToggle}
             disabled={savePending}
             title={saved ? "Remove bookmark" : "Save post"}

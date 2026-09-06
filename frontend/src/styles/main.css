@@ -3,21 +3,22 @@
    ============================================================ */
 
 :root {
-  /* PostHub 3.0 Design System Tokens */
+  /* PostHub Visual Design System Tokens */
   --ph-bg: #f8fafc;
+  --ph-bg-secondary: #f1f5f9;
   --ph-surface: #ffffff;
   --ph-surface-elevated: #ffffff;
-  --ph-surface-secondary: #f1f5f9;
+  --ph-surface-secondary: #f8fafc;
   --ph-border: #e2e8f0;
   --ph-border-light: #f1f5f9;
   --ph-text: #0f172a;
   --ph-text-muted: #64748b;
   --ph-text-light: #94a3b8;
-  --ph-primary: #2563eb;
-  --ph-primary-hover: #1d4ed8;
-  --ph-primary-light: #eff6ff;
-  --ph-accent: #f43f5e;
-  --ph-accent-hover: #e11d48;
+  --ph-primary: #6366f1;
+  --ph-primary-hover: #4f46e5;
+  --ph-primary-light: #eef2ff;
+  --ph-accent: #22d3ee;
+  --ph-accent-hover: #06b6d4;
   --ph-success: #10b981;
   --ph-success-hover: #059669;
   --ph-warning: #f59e0b;
@@ -26,10 +27,10 @@
   --ph-radius-md: 12px;
   --ph-radius-lg: 16px;
   --ph-radius-xl: 20px;
-  --ph-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --ph-shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
-  --ph-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
-  --ph-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --ph-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --ph-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --ph-shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.08);
+  --ph-transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
 
   /* Semantic Aliases */
   --primary-color: var(--ph-primary);
@@ -54,31 +55,40 @@
   --radius-md: var(--ph-radius-md);
   --radius-lg: var(--ph-radius-lg);
   --radius-xl: var(--ph-radius-xl);
-  --transition-fast: var(--ph-transition-fast);
+  --transition-fast: var(--ph-transition);
 }
 
-[data-theme="dark"] {
+[data-theme="dark"],
+[data-bs-theme="dark"] {
   --ph-bg: #0b1120;
-  --ph-surface: #151f32;
-  --ph-surface-elevated: #1e293b;
-  --ph-surface-secondary: #1e293b;
-  --ph-border: #233149;
-  --ph-border-light: #182338;
-  --ph-text: #f8fafc;
+  --ph-bg-secondary: #0f172a;
+  --ph-surface: #111827;
+  --ph-surface-elevated: #172033;
+  --ph-surface-secondary: #0f172a;
+  --ph-border: rgba(148, 163, 184, 0.12);
+  --ph-border-light: rgba(148, 163, 184, 0.08);
+  --ph-text: #f1f5f9;
   --ph-text-muted: #94a3b8;
   --ph-text-light: #64748b;
-  --ph-primary: #3b82f6;
-  --ph-primary-hover: #60a5fa;
-  --ph-primary-light: rgba(59, 130, 246, 0.18);
-  --ph-accent: #fb7185;
-  --ph-accent-hover: #f43f5e;
-  --ph-success: #34d399;
-  --ph-success-hover: #10b981;
-  --ph-warning: #fbbf24;
-  --ph-danger: #f87171;
-  --ph-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --ph-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
-  --ph-shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.55);
+  --ph-primary: #6366f1;
+  --ph-primary-hover: #818cf8;
+  --ph-primary-light: rgba(99, 102, 241, 0.15);
+  --ph-accent: #22d3ee;
+  --ph-accent-hover: #38bdf8;
+  --ph-success: #10b981;
+  --ph-success-hover: #34d399;
+  --ph-warning: #f59e0b;
+  --ph-danger: #f43f5e;
+  --ph-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --ph-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
+  --ph-shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.5);
+  --ph-transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
+
+  --bs-body-bg: var(--ph-bg);
+  --bs-body-color: var(--ph-text);
+  --bs-card-bg: var(--ph-surface);
+  --bs-card-border-color: var(--ph-border);
+  --bs-tertiary-bg: var(--ph-surface-secondary);
 }
 
 /* Global Reset & Body */
@@ -166,8 +176,9 @@ body {
 }
 
 .post-card:hover {
+  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  border-color: rgba(37, 99, 235, 0.25);
+  border-color: rgba(99, 102, 241, 0.28);
 }
 
 .post-card-header {
@@ -403,11 +414,13 @@ body {
   background-color: var(--primary-hover);
   border-color: var(--primary-hover);
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .btn-primary-custom:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* Post Composer */
@@ -419,6 +432,11 @@ body {
   padding: 1.25rem;
   margin-bottom: 1.75rem;
   transition: var(--transition-fast);
+}
+
+.composer-card:focus-within {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.08);
 }
 
 .composer-preview-container {
@@ -593,6 +611,49 @@ body {
 
 .heart-pop {
   animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Bookmark Pop Animation */
+@keyframes bookmarkPop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.bookmark-pop {
+  animation: bookmarkPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Notification Appearance */
+@keyframes notifEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-item-animate {
+  animation: notifEntrance 200ms ease-out forwards;
+}
+
+/* Subtle Gradient Utilities */
+.profile-cover-fallback {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(34, 211, 238, 0.12));
+}
+
+.nav-pill-gradient.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(34, 211, 238, 0.08)) !important;
+  color: var(--ph-primary) !important;
 }
 
 /* Password Toggle Icon Button */

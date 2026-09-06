@@ -10,7 +10,11 @@ import {
   FiTrendingUp, 
   FiUsers, 
   FiClock, 
-  FiCompass 
+  FiCompass,
+  FiImage,
+  FiPieChart,
+  FiLink,
+  FiFileText
 } from "react-icons/fi";
 import { getPosts, deletePost as deletePostApi } from "../services/posts";
 import { useUser } from "../context/UserContext";
@@ -138,8 +142,8 @@ export default function Dashboard() {
           {/* Center Column: Feed Stream */}
           <div className="col-12 col-lg-9 col-xl-6">
             {/* Quick composer prompt */}
-            <div className="composer-card d-flex align-items-center justify-content-between mb-4">
-              <div className="d-flex align-items-center gap-3">
+            <div className="composer-card mb-4">
+              <div className="d-flex align-items-center gap-3 mb-3">
                 {user?.avatar ? (
                   <img
                     src={user.avatar}
@@ -152,21 +156,64 @@ export default function Dashboard() {
                     {(user?.name || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div>
-                  <p className="mb-0 fw-medium text-body">
+                <Link
+                  to="/create-post"
+                  className="flex-grow-1 text-decoration-none"
+                  aria-label="Create a post"
+                >
+                  <div className="form-control bg-body-tertiary text-muted py-2 px-3 rounded-pill border-0 text-start" style={{ cursor: "pointer" }}>
                     What's on your mind, {user?.name?.split(" ")[0] || "there"}?
-                  </p>
-                  <span className="text-muted small">Share text, multiple photos, a poll, or a link</span>
-                </div>
+                  </div>
+                </Link>
+                <Button
+                  as={Link}
+                  to="/create-post"
+                  className="btn-primary-custom d-flex align-items-center gap-1.5 text-decoration-none px-3 py-2 rounded-pill shadow-sm"
+                  size="sm"
+                >
+                  <FiPlusSquare /> <span className="d-none d-sm-inline">Post</span>
+                </Button>
               </div>
-              <Button
-                as={Link}
-                to="/create-post"
-                className="btn-primary-custom d-flex align-items-center gap-1.5 text-decoration-none px-3"
-                size="sm"
-              >
-                <FiPlusSquare /> Create Post
-              </Button>
+
+              {/* Action Triggers: Photo, Poll, Link, Draft */}
+              <div className="d-flex align-items-center justify-content-between pt-2 border-top">
+                <div className="d-flex align-items-center gap-2">
+                  <Link
+                    to="/create-post"
+                    state={{ postType: "IMAGE" }}
+                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill hover-bg text-decoration-none"
+                  >
+                    <FiImage className="text-success" size={15} />
+                    <span className="small fw-medium">Photo</span>
+                  </Link>
+                  <Link
+                    to="/create-post"
+                    state={{ postType: "POLL" }}
+                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill hover-bg text-decoration-none"
+                  >
+                    <FiPieChart className="text-warning" size={15} />
+                    <span className="small fw-medium">Poll</span>
+                  </Link>
+                  <Link
+                    to="/create-post"
+                    state={{ postType: "LINK" }}
+                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill hover-bg text-decoration-none"
+                  >
+                    <FiLink className="text-info" size={15} />
+                    <span className="small fw-medium">Link</span>
+                  </Link>
+                </div>
+                {localStorage.getItem("posthub_draft") && (
+                  <Link
+                    to="/create-post"
+                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1 px-2 py-1 rounded-pill hover-bg text-decoration-none small"
+                    title="You have a saved draft"
+                  >
+                    <FiFileText size={13} className="text-primary" />
+                    <span className="small text-primary fw-medium">Draft</span>
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* Social Feed Tabs */}

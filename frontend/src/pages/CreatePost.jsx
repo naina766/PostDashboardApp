@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Container, Form, Button, Spinner, Nav } from "react-bootstrap";
 import { FiImage, FiX, FiSend, FiArrowLeft, FiPieChart, FiLink, FiFileText } from "react-icons/fi";
 import { createPost } from "../services/posts";
@@ -7,10 +7,11 @@ import { useToast } from "../context/ToastContext";
 
 export default function CreatePost() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const fileInputRef = useRef(null);
 
-  const [postType, setPostType] = useState("TEXT"); // TEXT, IMAGE, POLL, LINK
+  const [postType, setPostType] = useState(location.state?.postType || "TEXT"); // TEXT, IMAGE, POLL, LINK
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [imageFiles, setImageFiles] = useState([]);

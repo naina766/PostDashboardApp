@@ -82,7 +82,6 @@ export default function AppNavbar() {
         <Navbar.Brand as={Link} to="/dashboard" onClick={handleNavClick} className="posthub-brand d-flex align-items-center gap-2">
           <FiShare2 className="brand-icon" />
           <span>PostHub</span>
-          <span className="badge-v2">V3</span>
         </Navbar.Brand>
 
         {/* Global Search Bar on Desktop */}

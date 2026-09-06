@@ -182,7 +182,8 @@ export default function Explore() {
               placeholder="Search creators, topics, or hashtags..."
               value={searchQuery}
               onChange={handleSearchChange}
-              className="border-0 bg-body shadow-none"
+              className="border-0 bg-body shadow-none explore-search-input"
+              aria-label="Search creators, topics, or hashtags"
             />
             {searchQuery && (
               <Button
@@ -192,6 +193,7 @@ export default function Explore() {
                   setSearchQuery("");
                   setSearchResults(null);
                 }}
+                aria-label="Clear search"
               >
                 ✕
               </Button>

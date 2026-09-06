@@ -19,7 +19,8 @@ import {
   FiVolumeX,
   FiVolume2,
   FiUsers,
-  FiMoreHorizontal
+  FiMoreHorizontal,
+  FiBarChart2
 } from "react-icons/fi";
 import { 
   getProfileByUsername, 
@@ -345,11 +346,10 @@ export default function Profile() {
       <Container style={{ maxWidth: "820px" }}>
         {/* Cover Photo Header */}
         <div
-          className="profile-cover position-relative rounded-4 overflow-hidden border shadow-sm"
+          className={`profile-cover position-relative rounded-4 overflow-hidden border shadow-sm ${!profile.coverImage ? "profile-cover-fallback" : ""}`}
           style={{
             height: "220px",
-            backgroundColor: "var(--bs-primary-bg-subtle, #e9ecef)",
-            backgroundImage: profile.coverImage ? `url(${profile.coverImage})` : "none",
+            backgroundImage: profile.coverImage ? `url(${profile.coverImage})` : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -583,6 +583,16 @@ export default function Profile() {
                 className="d-flex align-items-center gap-1.5 cursor-pointer py-2 px-3 fw-semibold"
               >
                 <FiBookmark /> Saved
+              </Nav.Link>
+            </Nav.Item>
+          )}
+          {isOwnProfile && (
+            <Nav.Item>
+              <Nav.Link
+                onClick={() => navigate("/creator")}
+                className="d-flex align-items-center gap-1.5 cursor-pointer py-2 px-3 fw-semibold"
+              >
+                <FiBarChart2 /> Analytics
               </Nav.Link>
             </Nav.Item>
           )}
