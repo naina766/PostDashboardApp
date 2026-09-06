@@ -9,13 +9,13 @@ export const createPostController = async (req, res, next) => {
         content: req.body.content,
         image: req.file?.path || "",
       },
-      req.user._id
+      req.user
     );
 
     sendResponse(res, {
       statusCode: 201,
       success: true,
-      message: "Post created",
+      message: "Post created successfully",
       data: post,
     });
   } catch (err) {
@@ -25,12 +25,14 @@ export const createPostController = async (req, res, next) => {
 
 export const getPostsController = async (req, res, next) => {
   try {
-    const posts = await PostService.getPosts(req.user._id);
+    const { page, limit, search, sort } = req.query;
+    const result = await PostService.getPosts({ page, limit, search, sort });
+
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Posts fetched",
-      data: posts,
+      message: "Posts fetched successfully",
+      data: result,
     });
   } catch (err) {
     next(err);
@@ -42,14 +44,19 @@ export const updatePostController = async (req, res, next) => {
     const data = {
       title: req.body.title,
       content: req.body.content,
-      image: req.file?.path,
+      ...(req.file?.path ? { image: req.file.path } : {}),
     };
 
-    const post = await PostService.updatePost(req.params.id, data, req.user._id);
+    const post = await PostService.updatePost(
+      req.params.id,
+      data,
+      req.user._id
+    );
+
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Post updated",
+      message: "Post updated successfully",
       data: post,
     });
   } catch (err) {
@@ -63,10 +70,43 @@ export const deletePostController = async (req, res, next) => {
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Post deleted",
+      message: "Post deleted successfully",
       data: post,
     });
   } catch (err) {
     next(err);
   }
 };
+
+export const likePostController = async (req, res, next) => {
+  try {
+    const result = await PostService.toggleLike(req.params.id, req.user);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: result.liked ? "Post liked" : "Post unliked",
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const commentPostController = async (req, res, next) => {
+  try {
+    const result = await PostService.addComment(
+      req.params.id,
+      req.user,
+      req.body.text
+    );
+    sendResponse(res, {
+      statusCode: 201,
+      success: true,
+      message: "Comment added successfully",
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+

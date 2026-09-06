@@ -1,25 +1,33 @@
 import API from "./api";
 
-const authHeaders = (isFormData = false) => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-    ...(isFormData && { "Content-Type": "multipart/form-data" }),
-  },
-});
-
-export const getPosts = () => API.get("/posts", authHeaders());
-export const createPost = (data) => {
-  const formData = new FormData();
-  formData.append("title", data.title);
-  formData.append("content", data.content);
-  if (data.image) formData.append("image", data.image);
-  return API.post("/posts", formData, authHeaders(true));
+export const getPosts = (params = {}) => {
+  return API.get("/posts", { params });
 };
-export const updatePost = (id, data) => {
+
+export const createPost = (data) => {
+  if (data instanceof FormData) {
+    return API.post("/posts", data);
+  }
   const formData = new FormData();
   if (data.title) formData.append("title", data.title);
   if (data.content) formData.append("content", data.content);
   if (data.image) formData.append("image", data.image);
-  return API.put(`/posts/${id}`, formData, authHeaders(true));
+  return API.post("/posts", formData);
 };
-export const deletePost = (id) => API.delete(`/posts/${id}`, authHeaders());
+
+export const updatePost = (id, data) => {
+  if (data instanceof FormData) {
+    return API.put(`/posts/${id}`, data);
+  }
+  const formData = new FormData();
+  if (data.title !== undefined) formData.append("title", data.title);
+  if (data.content !== undefined) formData.append("content", data.content);
+  if (data.image) formData.append("image", data.image);
+  return API.put(`/posts/${id}`, formData);
+};
+
+export const deletePost = (id) => API.delete(`/posts/${id}`);
+
+export const toggleLike = (id) => API.post(`/posts/${id}/like`);
+
+export const addComment = (id, text) => API.post(`/posts/${id}/comments`, { text });

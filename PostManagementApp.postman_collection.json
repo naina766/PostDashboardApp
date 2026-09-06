@@ -1,0 +1,353 @@
+{
+	"info": {
+		"_postman_id": "4acc4dba-5971-40ce-9635-dc65372c0cd9",
+		"name": "PostManagementApp",
+		"description": "All backend APIs for authentication and posts CRUD.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49205168",
+		"_collection_link": "https://winter-sunset-3551664.postman.co/workspace/8b7db1a3-c27b-49eb-8aca-775c7739e2ed/collection/49205168-4acc4dba-5971-40ce-9635-dc65372c0cd9?action=share&source=collection_link&creator=49205168"
+	},
+	"item": [
+		{
+			"name": "Register User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Ram\",\r\n  \"email\": \"ram6@gmail.com\",\r\n  \"password\": \"Password456\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Base_url}}api/auth/register",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"ram6@gmail.com\",\r\n  \"password\": \"Password456\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Base_url}}api/auth/login",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Profile",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Ram\",\r\n  \"email\": \"ram6@gmail.com\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{Base_url}}api/auth/profile",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"auth",
+						"profile"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Post",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "title",
+							"value": "My New Post",
+							"type": "text"
+						},
+						{
+							"key": "content",
+							"value": "This is a  new post description",
+							"type": "text"
+						},
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{Base_url}}api/posts",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"posts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Post",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "title",
+							"value": "My corrected Post",
+							"type": "text"
+						},
+						{
+							"key": "content",
+							"value": "This is a new corrected post description",
+							"type": "text"
+						},
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{Base_url}}api/posts/69403d133adb8ddf4d95aec3",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"posts",
+						"69403d133adb8ddf4d95aec3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Profile",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Ram\",\r\n  \"email\": \"ram6@gmail.com\"\r\n}\r\n"
+				},
+				"url": {
+					"raw": "{{Base_url}}api/auth/profile",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"auth",
+						"profile"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Posts",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "title",
+							"value": "My First Post",
+							"type": "text"
+						},
+						{
+							"key": "content",
+							"value": "This is a post description",
+							"type": "text"
+						},
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{Base_url}}api/posts",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"posts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Post",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "title",
+							"value": "My corrected Post",
+							"type": "text"
+						},
+						{
+							"key": "content",
+							"value": "This is a new corrected post description",
+							"type": "text"
+						},
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{Base_url}}api/posts/69403e233adb8ddf4d95aed1",
+					"host": [
+						"{{Base_url}}api"
+					],
+					"path": [
+						"posts",
+						"69403e233adb8ddf4d95aed1"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "Base_url",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "tok",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "tok",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
