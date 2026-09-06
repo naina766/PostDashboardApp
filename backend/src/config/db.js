@@ -5,10 +5,10 @@ import mongoose from "mongoose";
  * Includes pool controls, timeout resilience, reconnection telemetry, and graceful shutdown.
  */
 const connectDB = async () => {
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 
   if (!mongoUri) {
-    console.error("❌ Fatal: MONGO_URI environment variable is not defined.");
+    console.error("❌ Fatal: MONGODB_URI or MONGO_URI environment variable is not defined.");
     process.exit(1);
   }
 

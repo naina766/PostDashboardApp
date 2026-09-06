@@ -6,7 +6,7 @@ import cors from "cors";
  */
 export function configureCors() {
   const isProduction = process.env.NODE_ENV === "production";
-  const rawOrigins = process.env.FRONTEND_URL || "http://localhost:5173";
+  const rawOrigins = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
   const allowedOrigins = rawOrigins
     .split(",")
     .map((o) => o.trim().replace(/\/$/, ""))

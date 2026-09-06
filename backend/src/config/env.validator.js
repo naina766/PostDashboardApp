@@ -9,8 +9,8 @@ export function validateEnvironment() {
   const warnings = [];
 
   // 1. Database Configuration Check
-  if (!process.env.MONGO_URI) {
-    errors.push("DATABASE: 'MONGO_URI' is required to connect to MongoDB.");
+  if (!process.env.MONGODB_URI && !process.env.MONGO_URI) {
+    errors.push("DATABASE: 'MONGODB_URI' (or 'MONGO_URI') is required to connect to MongoDB.");
   }
 
   // 2. Authentication Secret Check
@@ -21,8 +21,8 @@ export function validateEnvironment() {
   }
 
   // 3. CORS & Allowed Origin Check
-  if (isProduction && !process.env.FRONTEND_URL) {
-    warnings.push("CORS: 'FRONTEND_URL' not specified in production. Defaulting to strict local origin rejection.");
+  if (isProduction && !process.env.CLIENT_URL && !process.env.FRONTEND_URL) {
+    warnings.push("CORS: 'CLIENT_URL' (or 'FRONTEND_URL') not specified in production. Defaulting to strict local origin rejection.");
   }
 
   // 4. Cloudinary Media Storage Check

@@ -35,13 +35,17 @@ Frontend (Vercel Edge)   <--->   Backend API (Render Node.js)   <--->   Database
    - **Health Check Path**: `/api/health`
 3. Configure Environment Variables:
    - `NODE_ENV`: `production`
-   - `PORT`: `5000`
-   - `MONGO_URI`: `[MongoDB Atlas URI]`
-   - `JWT_SECRET`: `[Cryptographic 64-char hex secret]`
-   - `FRONTEND_URL`: `https://[your-app].vercel.app`
-   - `CLOUDINARY_CLOUD_NAME`: `[Cloudinary Name]`
-   - `CLOUDINARY_API_KEY`: `[Cloudinary Key]`
-   - `CLOUDINARY_API_SECRET`: `[Cloudinary Secret]`
+   - `PORT`: (Supplied automatically by Render; application dynamically listens on `process.env.PORT || 5000`)
+   - `MONGODB_URI` (or `MONGO_URI`): `[MongoDB Atlas connection string]`
+   - `JWT_SECRET`: `[Cryptographic 64-character secret key]`
+   - `CLIENT_URL` (or `FRONTEND_URL`): `https://[your-frontend].vercel.app`
+   - `CLOUDINARY_CLOUD_NAME`: `[Your Cloudinary Cloud Name]`
+   - `CLOUDINARY_API_KEY`: `[Your Cloudinary API Key]`
+   - `CLOUDINARY_API_SECRET`: `[Your Cloudinary API Secret]`
+
+4. Health Probes:
+   - **Liveness Probe**: `GET /api/health` returns HTTP 200 with service uptime, memory, and status.
+   - **Readiness Probe**: `GET /api/ready` returns HTTP 200 when database connectivity is verified (HTTP 503 if warming up).
 
 ### 2.3 Vercel Frontend Deployment
 1. Import repository in [Vercel](https://vercel.com).
