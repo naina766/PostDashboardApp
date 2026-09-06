@@ -1,246 +1,237 @@
-# PostHub — Social Post Management Platform
+# PostHub 2.0 — Production-Style Social Community & Content Platform
 
-> A production-style full-stack social post management platform built with React, Node.js, Express, and MongoDB.
+> A full-scale, portfolio-grade social community platform built with **React**, **Node.js**, **Express**, **MongoDB**, and **Cloudinary**.
 
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5-lightgrey.svg)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6%20Collections-green.svg)](https://www.mongodb.com/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple.svg)](https://getbootstrap.com/)
+[![CI](https://github.com/naina766/PostDashboardApp/actions/workflows/ci.yml/badge.svg)](https://github.com/naina766/PostDashboardApp/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 📖 Overview
+## 📖 Product Vision & Overview
 
-**PostHub** is a clean, modern social post management platform designed to deliver a smooth social community experience. Users can publish text, photos, or combined posts, discover updates from the community in a public social feed, interact with instant optimistic likes and comments, search and sort posts, and track their engagement statistics through a dedicated profile dashboard.
+**PostHub 2.0** evolves from a basic post management application into a production-style social community platform. Combining patterns from developer networks, community forums, and content platforms, PostHub provides an engaging community experience while maintaining its own distinct visual identity.
 
----
-
-## ✨ Features
-
-- **JWT Authentication**: Secure user registration, credential validation, stateless session persistence, and bcrypt password hashing.
-- **Strict Two-Collection Database Architecture**: Entire platform is powered by strictly **two** MongoDB collections (`users` and `posts`), with likes and comments embedded directly inside post documents.
-- **Flexible Post Creation**: Supports text-only, image-only, or text + image posts with optional titles, character counters, and strict empty-post validation.
-- **Public Social Feed**: Community feed displaying posts from all users with newest posts first.
-- **Server-Side Pagination**: Efficient pagination via `skip()`, `limit()`, and `countDocuments()`, offering a fluid "Load More" experience.
-- **Real-Time Search & Multi-Criteria Sorting**: Debounced search across author usernames, post titles, and content, alongside sorting by `Latest`, `Most Liked`, and `Most Commented`.
-- **Instant Optimistic Interactions**:
-  - **Likes & Unlikes**: Atomic MongoDB updates (`$addToSet` and `$pull`) preventing duplicate likes and race conditions, with instant UI updates and error rollback.
-  - **Comments**: Inline comment composer with character limit tracking (500 chars) and instant optimistic state updates.
-- **Author-Only Authorization**: Backend-enforced ownership validation for editing and deleting posts with a native Bootstrap confirmation modal.
-- **Dynamic Profile Analytics**: Automatically calculates total posts created, likes received, and comments received on the author's posts without separate collections.
-- **SaaS-Grade Visual Design**: Styled with React Bootstrap, Bootstrap 5, and a custom CSS design system — **100% free of Tailwind CSS**.
-- **Dark & Light Mode**: Built-in theme switcher with `localStorage` persistence that styles cards, inputs, modals, and navigation seamlessly.
-- **Skeleton Loaders & Toast Feedback**: Native CSS shimmer skeletons on feed loading and non-intrusive Bootstrap toasts for user notifications.
-- **Image Lightbox**: Clickable post media with modal lightbox preview and automatic broken-image fallbacks.
-- **React Error Boundary**: Graceful runtime error catching ensuring application reliability.
+The platform is designed with a **modular monolithic backend** and a **component-driven React frontend**, adhering to clean code principles, predictable state management, and real-world scalability.
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Features by Phase
 
-### Frontend
-- **React.js** (v19)
-- **Bootstrap 5 & React Bootstrap**
-- **Custom CSS** (CSS Variables, theme tokens, micro-animations)
-- **Axios** (Central interceptor for JWT authorization)
-- **React Router** (v7)
-- **React Icons** (Feather icons)
+### 1. Social Profile System
+- **Rich User Profiles**: Display names, unique `@username`, custom avatars, cover photos, bio (up to 300 chars), location, website, skill badges, and social links (GitHub, Twitter, LinkedIn).
+- **Direct Image Uploads**: Cloudinary-backed avatar and cover photo uploads.
+- **Followers / Following Counters**: Live graph counts with dedicated modals listing followers and following accounts.
+- **Profile Content Tabs**: Categorized tabs for "Posts", "Media", and "Saved".
 
-### Backend
-- **Node.js** (ES Modules)
-- **Express.js** (v5)
-- **JSON Web Tokens (JWT)** for stateless authentication
-- **Bcrypt** for password encryption
-- **Multer & Cloudinary Storage** for image processing and hosting
+### 2. Follow & Social Graph
+- **Bidirectional Relationship**: Follow and unfollow users with optimistic UI updates.
+- **Self-Follow & Duplicate Prevention**: Server-enforced compound index `{ follower: 1, following: 1 }` preventing invalid self-relationships or duplicate follows.
+- **Suggested Users to Follow**: Recommends creators based on follower count while excluding already-followed members.
 
-### Database
-- **MongoDB** (Atlas / Local)
-- **Mongoose** (ODM)
+### 3. Advanced Post System
+- **Multi-Format Content**:
+  - **Standard Text**: Markdown-compatible content with character tracking.
+  - **Multi-Media**: Support for up to 4 images per post with modal lightbox expander.
+  - **Interactive Polls**: Community polls with custom questions, expiration timestamps, and live percentage calculation.
+  - **Link Cards**: Rich destination preview with hostname, title, and summary.
+- **Automatic Hashtag & Mention Extraction**: Regex parser extracting `#hashtags` and `@mentions` into normalized database indices.
+- **Draft Auto-Saving**: Drafts are continuously cached in `localStorage` so in-progress posts are never lost.
+
+### 4. Threaded Discussions (Level 2)
+- **Nested Comments & Replies**: 2-level discussion threads (`Post` → `Comment` → `Reply`).
+- **Comment Likes**: Community members can react and like individual comments.
+- **Granular Deletion**: Comment authors, post authors, and administrators can remove comments.
+
+### 5. Bookmark & Saved Collection
+- **Personalized Bookmarks**: Dedicated `Bookmark` collection with unique indexing (`{ user: 1, post: 1 }`).
+- **One-Click Saving**: Quick bookmark toggle with optimistic UI feedback.
+- **Saved Posts View**: Fast access to bookmarked posts via `/saved`.
+
+### 6. Explore & Global Server Search
+- **Trending Posts & Topics**: Deterministic ranking score highlighting hot discussions.
+- **Hashtag Feeds**: Filter and explore posts dedicated to specific topics (e.g. `/explore?tag=react`).
+- **Debounced Server-Side Search**: Fast search across users, posts, and hashtags without fetching the whole database into the browser.
+
+### 7. Deterministic Trending Engine
+PostHub does **not** rely on fake mock algorithms or ungrounded claims of machine learning. Post ranking is computed deterministically using the following formula:
+
+$$\text{TrendingScore} = (\text{likes} \times 1) + (\text{comments} \times 3) + (\text{shares} \times 4) + (\text{saves} \times 3) + \text{RecencyBonus}$$
+
+Where $\text{RecencyBonus} = \max(0, 100 - \text{hoursSinceCreation} \times 1.5)$.
+
+### 8. Notification Center
+- **Real-Time Event Tracking**: In-app notifications triggered for likes, comments, replies, follows, mentions, and bookmarks.
+- **Unread Badge & Polling**: Unread badge counter in the navigation bar.
+- **Status Updates**: Mark individual notifications as read or mark all as read simultaneously.
+
+### 9. Safety & Moderation
+- **Content & User Reporting**: Flag posts, comments, or users for Spam, Harassment, Hate Speech, Violence, Inappropriate content, or Misleading information.
+- **Audit-Ready Reports**: Every report records the reporter, target entity, timestamp, and status (`PENDING`, `RESOLVED`, `DISMISSED`).
+
+### 10. Administration Dashboard (`/admin`)
+- **Server-Side RBAC**: Strict role enforcement (`admin`, `moderator`, `user`).
+- **Platform Telemetry**: Monitor total users, total posts, pending reports, and active posts created in the last 24 hours.
+- **User Governance**: Search users, promote/demote roles, or suspend abusive accounts.
+- **Content Moderation**: Review reported posts and resolve or dismiss flags.
+
+### 11. Creator Analytics (`/analytics`)
+- **Performance KPIs**: Total posts, likes received, comments received, saves, and engagement rate per post.
+- **Format Breakdown**: Visual breakdown of Text, Media, Poll, and Link posts.
+- **Top 5 Performing Posts**: Quick sorting of top-performing content.
+- **6-Month Activity Timeline**: Visual monthly posting frequency.
+
+### 12. Security Hardening
+- **Helmet**: Secures HTTP headers (`crossOriginResourcePolicy: false` configured for static media).
+- **Express Rate Limiting**: Strict burst protection for authentication (50 req / 15 min) and API requests (500 req / 15 min).
+- **Sanitized Responses**: Password hashes and sensitive credentials are never leaked in API envelopes.
 
 ---
 
-## 📐 Architecture & Data Flow
+## 🏛️ System Architecture
 
 ```mermaid
 flowchart TD
     subgraph Client["Frontend (React 19 + Bootstrap 5)"]
-        UI["User Interface / Pages"]
-        Ctx["Context Layer (Auth, Theme, Toast)"]
-        Axios["Axios Client (JWT Interceptor)"]
-        UI --> Ctx --> Axios
+        UI["Pages: Feed, Explore, Profile, Notifications, Saved, Analytics, Admin"]
+        Context["Context Layer: UserContext, ThemeContext, ToastContext"]
+        Services["Axios Services (JWT Bearer Interceptor)"]
     end
 
-    subgraph Server["Backend (Express 5 REST API)"]
-        Router["Express Routers (/api/auth, /api/posts)"]
-        MW["Middlewares (Auth, Upload, Central Error Handler)"]
-        Ctrl["Controllers"]
-        Svc["Service Layer (Business Logic)"]
-        Mongoose["Mongoose Models"]
-        
-        Axios --> Router
-        Router --> MW
-        MW --> Ctrl
-        Ctrl --> Svc
-        Svc --> Mongoose
+    subgraph Server["Backend (Node.js + Express 5 Monolith)"]
+        Security["Security: Helmet, Rate Limiter, Strict CORS"]
+        Routes["API Routes: /auth, /users, /posts, /explore, /notifications, /reports, /admin, /analytics"]
+        AuthMW["Middleware: authMiddleware, optionalAuthMiddleware, roleMiddleware"]
+        ServicesBackend["Service Layer: Deterministic Trending, Notification triggers, Aggregations"]
     end
 
-    subgraph Database["MongoDB (Strictly 2 Collections)"]
-        Users[("users\n- _id\n- name\n- email\n- password\n- timestamps")]
-        Posts[("posts\n- _id\n- user\n- username\n- title\n- content\n- image\n- likes[]\n- comments[]\n- timestamps")]
-        Mongoose --> Users
-        Mongoose --> Posts
+    subgraph Storage["Database & Assets"]
+        Mongo[("MongoDB Atlas: users, posts, follows, notifications, bookmarks, reports")]
+        Cloudinary[("Cloudinary Media Storage")]
     end
+
+    UI --> Context
+    Context --> Services
+    Services --> Security
+    Security --> Routes
+    Routes --> AuthMW
+    AuthMW --> ServicesBackend
+    ServicesBackend --> Mongo
+    ServicesBackend --> Cloudinary
 ```
 
 ---
 
-## 🗄️ Database Design
+## 🗄️ Database Design (V2 Collections)
 
-The system enforces a strict **two-collection** constraint:
+PostHub 2.0 uses 6 clean, decoupled collections to prevent document bloat and ensure fast query times:
 
-```text
-MongoDB
-│
-├── users
-│   ├── _id (ObjectId)
-│   ├── name (String)
-│   ├── email (String, unique, lowercase)
-│   ├── password (String, bcrypt hashed)
-│   └── timestamps (createdAt, updatedAt)
-│
-└── posts
-    ├── _id (ObjectId)
-    ├── user (ObjectId, ref: "User")
-    ├── username (String, cached author name)
-    ├── title (String, optional)
-    ├── content (String, optional)
-    ├── image (String, optional Cloudinary URL)
-    ├── likes [
-    │     └── { userId: ObjectId, username: String }
-    │   ]
-    ├── comments [
-    │     └── { userId: ObjectId, username: String, text: String, createdAt: Date }
-    │   ]
-    └── timestamps (createdAt, updatedAt)
-```
-
-### Why Embed Likes and Comments?
-1. **Document Locality**: Loading a post along with its social reactions requires a single indexed query instead of multiple joins across collections.
-2. **Atomic Updates**: MongoDB's `$addToSet` and `$pull` operators guarantee atomic like/unlike mutations, eliminating race conditions without distributed locks.
-3. **Optimized Scaling**: For typical social cards, bounded embedded comments and likes deliver superior read performance.
+| Collection | Key Responsibilities | Primary Indexes |
+| :--- | :--- | :--- |
+| `users` | Auth credentials, social profile, follower counts, role | `{ email: 1 }`, `{ username: 1 }` |
+| `posts` | Post content, media array, poll subdocument, link preview, hashtags | `{ createdAt: -1 }`, `{ trendingScore: -1 }`, `{ hashtags: 1 }` |
+| `follows` | User-to-user social graph | `{ follower: 1, following: 1 }` (unique compound) |
+| `notifications` | Social interaction notifications | `{ recipient: 1, read: 1, createdAt: -1 }` |
+| `bookmarks` | Post saving / bookmarks | `{ user: 1, post: 1 }` (unique compound) |
+| `reports` | Community safety flags and moderation audit log | `{ status: 1, createdAt: -1 }`, `{ targetId: 1 }` |
 
 ---
 
-## 🔐 Authentication
-
-Authentication is implemented using stateless **JSON Web Tokens (JWT)**:
-1. User registers or logs in with email and password.
-2. Server validates credentials against the bcrypt hash.
-3. Server returns a signed JWT containing the user's `id` with a 1-day expiration.
-4. Client stores the token in `localStorage` and automatically attaches it to outgoing requests via an Axios request interceptor (`Authorization: Bearer <token>`).
-5. Protected endpoints pass through `authMiddleware`, verifying the signature and querying the authenticated user.
-
----
-
-## 🔌 API Endpoints
-
-### Authentication & Profile (`/api/auth`)
-
-| Method | Endpoint | Auth | Description |
-| :--- | :--- | :---: | :--- |
-| `POST` | `/api/auth/register` | Public | Register new user account |
-| `POST` | `/api/auth/login` | Public | Authenticate user & receive JWT |
-| `GET` | `/api/auth/profile` | Bearer JWT | Fetch current user profile with calculated stats |
-| `PUT` | `/api/auth/profile` | Bearer JWT | Update user name or email |
-
-### Posts Management (`/api/posts`)
-
-| Method | Endpoint | Auth | Description |
-| :--- | :--- | :---: | :--- |
-| `GET` | `/api/posts` | Public | Get public feed (supports `page`, `limit`, `search`, `sort`) |
-| `POST` | `/api/posts` | Bearer JWT | Create post (multipart/form-data: title, content, image) |
-| `PUT` | `/api/posts/:id` | Bearer JWT (Owner) | Update own post |
-| `DELETE`| `/api/posts/:id` | Bearer JWT (Owner) | Delete own post |
-| `POST` | `/api/posts/:id/like` | Bearer JWT | Atomically toggle like/unlike |
-| `POST` | `/api/posts/:id/comments` | Bearer JWT | Add a comment to a post |
-
----
-
-## 📸 Screenshots
-
-*(Add project screenshots here)*
-
-- **Feed (Light & Dark Mode)**: Community posts with full interactive cards.
-- **Create Post Composer**: Clean interface with image preview and character limits.
-- **User Profile**: Activity overview and engagement analytics.
-- **Authentication**: Responsive Login and Signup with password visibility toggle.
-
----
-
-## 💻 Local Development Setup
+## 🚀 Quick Start (Local Setup)
 
 ### Prerequisites
-- Node.js >= 18
-- MongoDB (local instance or MongoDB Atlas connection URI)
-- npm or yarn
+- **Node.js** (v20 or higher)
+- **MongoDB** (Local instance or MongoDB Atlas URI)
+- **Cloudinary Account** (for media uploads)
 
-### 1. Clone the repository
+### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/Post_Management_Web_App.git
-cd Post_Management_Web_App
+git clone https://github.com/naina766/PostDashboardApp.git
+cd PostHub
 ```
 
 ### 2. Configure Environment Variables
-Copy `.env.example` templates to `.env` in both `backend` and `frontend` directories:
+Copy `.env.example` in both `backend` and `frontend`:
 
-```bash
-# Backend
-cp backend/.env.example backend/.env
-
-# Frontend
-cp frontend/.env.example frontend/.env
+**`backend/.env`**:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_secure_jwt_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-### 3. Backend Setup
+**`frontend/.env`**:
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### 3. Install & Run Backend
 ```bash
 cd backend
 npm install
 npm run dev
 ```
-*Backend runs on `http://localhost:5000`.*
 
-### 4. Frontend Setup
+### 4. Install & Run Frontend
 ```bash
 cd ../frontend
 npm install
 npm run dev
 ```
-*Frontend runs on `http://localhost:5173`.*
+
+Visit `http://localhost:5173` to experience PostHub 2.0!
 
 ---
 
-## 🧪 Testing
+## 🐳 Docker Deployment
 
-The backend includes an automated test suite executed via Node's native `node:test` runner:
+PostHub includes container configurations for production:
 
+```bash
+# Build and run containers in background
+docker-compose up --build -d
+
+# Check running services
+docker-compose ps
+
+# Tear down containers
+docker-compose down
+```
+
+Services exposed:
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:5000`
+- MongoDB: `localhost:27017`
+
+---
+
+## 🧪 Automated Testing
+
+PostHub 2.0 has comprehensive unit and integration tests covering:
+- Database architecture & 6 social models
+- User authentication & password protections
+- Multi-format post validations & poll restrictions
+- Hashtag & mention parser correctness
+- Deterministic trending score calculation
+- Threaded 2-level comment & reply limits
+- Follow graph constraints & self-follow prevention
+- Report categorization
+- Administrator authorization and RBAC
+
+Run the test suite:
 ```bash
 cd backend
 npm test
 ```
 
-### Verified Scenarios:
-- ✅ Strict two-model MongoDB verification (`User`, `Post`).
-- ✅ Embedded `likes` and `comments` schema validation.
-- ✅ Registration input validation & missing field rejection (HTTP 400).
-- ✅ Login credential validation & invalid credential rejection.
-- ✅ Empty post rejection (must contain text, image, or both).
-- ✅ Invalid MongoDB ObjectId rejection.
-- ✅ Empty and oversized (>500 chars) comment rejection.
-- ✅ Non-owner post update and delete rejection (HTTP 403).
-
-To run the frontend production build and linter:
+Frontend linter and build check:
 ```bash
 cd frontend
 npm run lint
@@ -249,55 +240,27 @@ npm run build
 
 ---
 
-## 🚢 Deployment
+## 📚 API Reference
 
-### Frontend (Vercel / Netlify)
-1. Link your GitHub repository.
-2. Root directory: `frontend`
-3. Build command: `npm run build`
-4. Output directory: `dist`
-5. Set Environment Variable: `VITE_API_URL=https://your-backend.onrender.com`
+Complete documentation for all endpoints is available in [`docs/API.md`](docs/API.md).  
+A full Postman collection is also provided at [`PostManagementApp.postman_collection.json`](PostManagementApp.postman_collection.json).
 
-### Backend (Render / Railway)
-1. Create a Web Service from the repository.
-2. Root directory: `backend`
-3. Build command: `npm install`
-4. Start command: `node server.js`
-5. Configure Environment Variables:
-   - `PORT=5000`
-   - `MONGO_URI=mongodb+srv://...`
-   - `JWT_SECRET=...`
-   - `CLOUDINARY_CLOUD_NAME=...`
-   - `CLOUDINARY_API_KEY=...`
-   - `CLOUDINARY_API_SECRET=...`
-
-### Database (MongoDB Atlas)
-- Create a free M0 cluster on MongoDB Atlas.
-- Add Network Access IP: `0.0.0.0/0` (for cloud server access).
-- Create database user and obtain the standard connection URI.
+### Health Endpoint
+```http
+GET /api/health
+```
+```json
+{
+  "status": "ok",
+  "service": "posthub-api",
+  "version": "2.0.0",
+  "timestamp": "2026-09-06T11:20:00.000Z",
+  "uptime": 234.12
+}
+```
 
 ---
 
-## 🛡️ Security Best Practices
+## 🛡️ License
 
-1. **Password Hashing**: Passwords are encrypted using `bcrypt` (10 rounds) and stripped from all database projections and API responses.
-2. **Authorization Guards**: Authoritative server-side ownership checks prevent users from altering or deleting posts authored by others.
-3. **Atomic Mutations**: `$addToSet` and `$pull` prevent duplicate likes and race conditions.
-4. **Input & Upload Validation**: Strict file type filtering (`image/jpeg`, `image/png`, `image/webp`), 5MB file size limit, and comment length caps.
-5. **Secret Hygiene**: `.env` files are ignored by git; `.env.example` templates contain only non-sensitive placeholders.
-
----
-
-## 🔮 Future Improvements
-
-- Bookmark/Save post capability (embedded inside user document).
-- Infinite scroll option alongside current Load More button.
-- User profile avatars with Cloudinary photo upload.
-- Full-text MongoDB search index for large-scale deployments.
-
----
-
-## 👤 Author
-
-**Naina Varshney**  
-*Full-Stack / Frontend Developer*
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

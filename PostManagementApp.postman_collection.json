@@ -1,353 +1,462 @@
 {
 	"info": {
 		"_postman_id": "4acc4dba-5971-40ce-9635-dc65372c0cd9",
-		"name": "PostManagementApp",
-		"description": "All backend APIs for authentication and posts CRUD.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "49205168",
-		"_collection_link": "https://winter-sunset-3551664.postman.co/workspace/8b7db1a3-c27b-49eb-8aca-775c7739e2ed/collection/49205168-4acc4dba-5971-40ce-9635-dc65372c0cd9?action=share&source=collection_link&creator=49205168"
+		"name": "PostHub 2.0 API Collection",
+		"description": "Production-grade social community platform endpoints for PostHub 2.0.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Register User",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"name\": \"Ram\",\r\n  \"email\": \"ram6@gmail.com\",\r\n  \"password\": \"Password456\"\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
+			"name": "System Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{Base_url}}/api/health"
+					}
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Alex Mercer\",\n  \"username\": \"alexm\",\n  \"email\": \"alex@example.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": "{{Base_url}}/api/auth/register"
 					}
 				},
-				"url": {
-					"raw": "{{Base_url}}api/auth/register",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"auth",
-						"register"
-					]
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"alex@example.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": "{{Base_url}}/api/auth/login"
+					}
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Login User",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"email\": \"ram6@gmail.com\",\r\n  \"password\": \"Password456\"\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
+			"name": "Users & Social Graph",
+			"item": [
+				{
+					"name": "Get Profile by Username",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{Base_url}}/api/users/profile/alexm"
 					}
 				},
-				"url": {
-					"raw": "{{Base_url}}api/auth/login",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"auth",
-						"login"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Update Profile",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
-							"type": "string"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"name\": \"Ram\",\r\n  \"email\": \"ram6@gmail.com\"\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Alex Mercer\",\n  \"bio\": \"Software Architect & Tech Enthusiast\",\n  \"location\": \"San Francisco, CA\",\n  \"website\": \"https://alexm.dev\",\n  \"skills\": [\"Node.js\", \"React\", \"Cloud\", \"MongoDB\"],\n  \"socialLinks\": {\n    \"github\": \"https://github.com/alexm\",\n    \"twitter\": \"https://twitter.com/alexm\"\n  }\n}"
+						},
+						"url": "{{Base_url}}/api/users/profile"
 					}
 				},
-				"url": {
-					"raw": "{{Base_url}}api/auth/profile",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"auth",
-						"profile"
-					]
+				{
+					"name": "Follow User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/users/{{targetUserId}}/follow"
+					}
+				},
+				{
+					"name": "Unfollow User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/users/{{targetUserId}}/follow"
+					}
+				},
+				{
+					"name": "Get Suggested Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/users/suggestions?limit=5"
+					}
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Create Post",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
-							"type": "string"
-						}
-					]
+			"name": "Posts & Feeds",
+			"item": [
+				{
+					"name": "Get Social Feed (Tabs)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{Base_url}}/api/posts?page=1&limit=10&feedType=forYou&sort=latest"
+					}
 				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "title",
-							"value": "My New Post",
-							"type": "text"
+				{
+					"name": "Create Text/Media Post",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Scaling Antigravity Architecture\",\n  \"content\": \"Exploring deterministic ranking engines and modular monolithic designs in #NodeJS and #React! cc @janedoe\",\n  \"postType\": \"TEXT\"\n}"
 						},
-						{
-							"key": "content",
-							"value": "This is a  new post description",
-							"type": "text"
-						},
-						{
-							"key": "image",
-							"type": "file",
-							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
-						}
-					]
+						"url": "{{Base_url}}/api/posts"
+					}
 				},
-				"url": {
-					"raw": "{{Base_url}}api/posts",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"posts"
-					]
+				{
+					"name": "Create Poll Post",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Stack Choice\",\n  \"content\": \"Which UI library do you prefer? #webdev\",\n  \"postType\": \"POLL\",\n  \"poll\": {\n    \"question\": \"Preferred CSS Framework?\",\n    \"options\": [\"Bootstrap 5\", \"Vanilla CSS Tokens\", \"Tailwind CSS\"]\n  }\n}"
+						},
+						"url": "{{Base_url}}/api/posts"
+					}
+				},
+				{
+					"name": "Vote on Poll",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"optionIndex\": 0\n}"
+						},
+						"url": "{{Base_url}}/api/posts/{{postId}}/vote"
+					}
+				},
+				{
+					"name": "Toggle Like",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/posts/{{postId}}/like"
+					}
+				},
+				{
+					"name": "Toggle Save / Bookmark",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/posts/{{postId}}/save"
+					}
+				},
+				{
+					"name": "Add Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"text\": \"Fantastic implementation!\"\n}"
+						},
+						"url": "{{Base_url}}/api/posts/{{postId}}/comments"
+					}
+				},
+				{
+					"name": "Add Reply (Level 2)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"text\": \"Appreciate your insights!\"\n}"
+						},
+						"url": "{{Base_url}}/api/posts/{{postId}}/comments/{{commentId}}/replies"
+					}
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Update Post",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
-							"type": "string"
-						}
-					]
+			"name": "Explore & Discovery",
+			"item": [
+				{
+					"name": "Get Trending Posts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{Base_url}}/api/explore/trending"
+					}
 				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "title",
-							"value": "My corrected Post",
-							"type": "text"
-						},
-						{
-							"key": "content",
-							"value": "This is a new corrected post description",
-							"type": "text"
-						},
-						{
-							"key": "image",
-							"type": "file",
-							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
-						}
-					]
+				{
+					"name": "Get Trending Hashtags",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{Base_url}}/api/explore/hashtags?limit=10"
+					}
 				},
-				"url": {
-					"raw": "{{Base_url}}api/posts/69403d133adb8ddf4d95aec3",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"posts",
-						"69403d133adb8ddf4d95aec3"
-					]
+				{
+					"name": "Global Server Search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{Base_url}}/api/explore/search?q=react"
+					}
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Get Profile",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
-							"type": "string"
-						}
-					]
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/notifications"
+					}
 				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"name\": \"Ram\",\r\n  \"email\": \"ram6@gmail.com\"\r\n}\r\n"
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/notifications/unread-count"
+					}
 				},
-				"url": {
-					"raw": "{{Base_url}}api/auth/profile",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"auth",
-						"profile"
-					]
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/notifications/read-all"
+					}
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Get Posts",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDAzYTlhM2FkYjhkZGY0ZDk1YWViNSIsImlhdCI6MTc2NTgxNzA0NCwiZXhwIjoxNzY1OTAzNDQ0fQ.aKPO6GpSCi4hrrH4ViWXA-m-GWAb0WPXwmd005_kwbE",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "title",
-							"value": "My First Post",
-							"type": "text"
-						},
-						{
-							"key": "content",
-							"value": "This is a post description",
-							"type": "text"
-						},
-						{
-							"key": "image",
-							"type": "file",
-							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
-						}
-					]
-				},
-				"url": {
-					"raw": "{{Base_url}}api/posts",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"posts"
-					]
+			"name": "Creator Analytics",
+			"item": [
+				{
+					"name": "Get Creator Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/analytics/me"
+					}
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Delete Post",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "title",
-							"value": "My corrected Post",
-							"type": "text"
+			"name": "Safety & Moderation",
+			"item": [
+				{
+					"name": "Submit Report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"targetType\": \"POST\",\n  \"targetId\": \"{{postId}}\",\n  \"reason\": \"SPAM\",\n  \"details\": \"Repeated automated advertising content\"\n}"
 						},
-						{
-							"key": "content",
-							"value": "This is a new corrected post description",
-							"type": "text"
-						},
-						{
-							"key": "image",
-							"type": "file",
-							"src": "/C:/Users/Hp/Downloads/MERN-logo.png"
-						}
-					]
-				},
-				"url": {
-					"raw": "{{Base_url}}api/posts/69403e233adb8ddf4d95aed1",
-					"host": [
-						"{{Base_url}}api"
-					],
-					"path": [
-						"posts",
-						"69403e233adb8ddf4d95aed1"
-					]
+						"url": "{{Base_url}}/api/reports"
+					}
 				}
-			},
-			"response": []
+			]
+		},
+		{
+			"name": "Administration",
+			"item": [
+				{
+					"name": "Get Platform Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/admin/stats"
+					}
+				},
+				{
+					"name": "Get Users (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/admin/users?page=1&limit=20"
+					}
+				},
+				{
+					"name": "Suspend / Restore User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{Base_url}}/api/admin/users/{{targetUserId}}/suspend"
+					}
+				}
+			]
 		}
 	],
 	"variable": [
 		{
 			"key": "Base_url",
-			"value": "",
-			"type": "default"
+			"value": "http://localhost:5000"
 		},
 		{
 			"key": "token",
-			"value": "",
-			"type": "default"
+			"value": ""
 		},
 		{
-			"key": "tok",
-			"value": "",
-			"type": "default"
+			"key": "postId",
+			"value": ""
 		},
 		{
-			"key": "tok",
-			"value": "",
-			"type": "default"
+			"key": "targetUserId",
+			"value": ""
+		},
+		{
+			"key": "commentId",
+			"value": ""
 		}
 	]
 }
