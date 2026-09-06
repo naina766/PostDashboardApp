@@ -13,7 +13,9 @@ import {
   FiUser, 
   FiLogOut, 
   FiSun, 
-  FiMoon 
+  FiMoon,
+  FiSettings,
+  FiSearch
 } from "react-icons/fi";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/ThemeContext";
@@ -25,6 +27,16 @@ export default function AppNavbar() {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [navSearch, setNavSearch] = useState("");
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (navSearch.trim()) {
+      navigate(`/explore?q=${encodeURIComponent(navSearch.trim())}`);
+      setNavSearch("");
+      setExpanded(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -70,8 +82,21 @@ export default function AppNavbar() {
         <Navbar.Brand as={Link} to="/dashboard" onClick={handleNavClick} className="posthub-brand d-flex align-items-center gap-2">
           <FiShare2 className="brand-icon" />
           <span>PostHub</span>
-          <span className="badge-v2">V2</span>
+          <span className="badge-v2">V3</span>
         </Navbar.Brand>
+
+        {/* Global Search Bar on Desktop */}
+        <form onSubmit={handleSearchSubmit} className="d-none d-md-flex align-items-center position-relative ms-3 me-2 flex-grow-1" style={{ maxWidth: "280px" }}>
+          <FiSearch className="position-absolute start-0 ms-2.5 text-muted pointer-events-none" size={14} />
+          <input
+            type="search"
+            className="form-control form-control-sm ps-4 rounded-pill border-0 bg-body-secondary"
+            placeholder="Search creators, #tags..."
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+            aria-label="Global Search"
+          />
+        </form>
 
         <div className="d-flex align-items-center gap-2 d-lg-none ms-auto me-2">
           <Link to="/notifications" onClick={handleNavClick} className="position-relative text-body px-2" aria-label="Notifications">
@@ -134,11 +159,19 @@ export default function AppNavbar() {
             </Nav.Link>
             <Nav.Link 
               as={NavLink} 
-              to="/analytics" 
+              to="/creator" 
               onClick={handleNavClick} 
               className="posthub-nav-link"
             >
-              <FiBarChart2 /> Analytics
+              <FiBarChart2 /> Creator
+            </Nav.Link>
+            <Nav.Link 
+              as={NavLink} 
+              to="/settings" 
+              onClick={handleNavClick} 
+              className="posthub-nav-link"
+            >
+              <FiSettings /> Settings
             </Nav.Link>
             {isAdminOrMod && (
               <Nav.Link 
@@ -189,6 +222,16 @@ export default function AppNavbar() {
                   )}
                   <span className="d-none d-xl-inline small fw-medium">{user.name}</span>
                 </Nav.Link>
+
+                <button
+                  onClick={toggleTheme}
+                  className="theme-toggle-btn d-none d-lg-flex"
+                  title={`Switch to ${theme === "light" ? "Dark" : "Light"} mode`}
+                  aria-label={`Switch to ${theme === "light" ? "Dark" : "Light"} mode`}
+                  type="button"
+                >
+                  {theme === "light" ? <FiMoon size={15} /> : <FiSun size={15} />}
+                </button>
 
                 <Button
                   variant="outline-secondary"

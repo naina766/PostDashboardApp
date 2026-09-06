@@ -5,6 +5,8 @@ export const getTrendingPosts = (params = {}) => API.get("/explore/trending", { 
 export const getTrendingHashtags = (limit = 10) =>
   API.get("/explore/hashtags", { params: { limit } });
 
+export const getTrending = getTrendingHashtags;
+
 export const getPostsByHashtag = (tag, params = {}) =>
   API.get(`/explore/hashtags/${tag}`, { params });
 

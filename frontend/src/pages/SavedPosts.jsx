@@ -5,7 +5,7 @@ import { getSavedPosts } from "../services/posts";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import PostCard from "../components/PostCard";
-import LoadingSpinner from "../components/LoadingSpinner";
+import PostSkeleton from "../components/PostSkeleton";
 import EmptyState from "../components/EmptyState";
 
 export default function SavedPosts() {
@@ -65,7 +65,10 @@ export default function SavedPosts() {
         </div>
 
         {loading ? (
-          <LoadingSpinner message="Loading saved bookmarks..." />
+          <div>
+            <PostSkeleton />
+            <PostSkeleton />
+          </div>
         ) : posts.length === 0 ? (
           <EmptyState
             title="No saved posts yet"

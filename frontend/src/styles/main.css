@@ -3,50 +3,82 @@
    ============================================================ */
 
 :root {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
-  --accent-color: #f43f5e;
-  --accent-hover: #e11d48;
-  --success-color: #10b981;
-  --success-hover: #059669;
-  --bg-page: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-card-secondary: #f1f5f9;
-  --border-color: #e2e8f0;
-  --border-light: #f1f5f9;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --transition-fast: all 0.2s ease-in-out;
+  /* PostHub 3.0 Design System Tokens */
+  --ph-bg: #f8fafc;
+  --ph-surface: #ffffff;
+  --ph-surface-elevated: #ffffff;
+  --ph-surface-secondary: #f1f5f9;
+  --ph-border: #e2e8f0;
+  --ph-border-light: #f1f5f9;
+  --ph-text: #0f172a;
+  --ph-text-muted: #64748b;
+  --ph-text-light: #94a3b8;
+  --ph-primary: #2563eb;
+  --ph-primary-hover: #1d4ed8;
+  --ph-primary-light: #eff6ff;
+  --ph-accent: #f43f5e;
+  --ph-accent-hover: #e11d48;
+  --ph-success: #10b981;
+  --ph-success-hover: #059669;
+  --ph-warning: #f59e0b;
+  --ph-danger: #ef4444;
+  --ph-radius-sm: 8px;
+  --ph-radius-md: 12px;
+  --ph-radius-lg: 16px;
+  --ph-radius-xl: 20px;
+  --ph-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ph-shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  --ph-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+  --ph-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Semantic Aliases */
+  --primary-color: var(--ph-primary);
+  --primary-hover: var(--ph-primary-hover);
+  --primary-light: var(--ph-primary-light);
+  --accent-color: var(--ph-accent);
+  --accent-hover: var(--ph-accent-hover);
+  --success-color: var(--ph-success);
+  --success-hover: var(--ph-success-hover);
+  --bg-page: var(--ph-bg);
+  --bg-card: var(--ph-surface);
+  --bg-card-secondary: var(--ph-surface-secondary);
+  --border-color: var(--ph-border);
+  --border-light: var(--ph-border-light);
+  --text-main: var(--ph-text);
+  --text-muted: var(--ph-text-muted);
+  --text-light: var(--ph-text-light);
+  --shadow-sm: var(--ph-shadow-sm);
+  --shadow-md: var(--ph-shadow-md);
+  --shadow-lg: var(--ph-shadow-lg);
+  --radius-sm: var(--ph-radius-sm);
+  --radius-md: var(--ph-radius-md);
+  --radius-lg: var(--ph-radius-lg);
+  --radius-xl: var(--ph-radius-xl);
+  --transition-fast: var(--ph-transition-fast);
 }
 
 [data-theme="dark"] {
-  --primary-color: #3b82f6;
-  --primary-hover: #60a5fa;
-  --primary-light: rgba(59, 130, 246, 0.15);
-  --accent-color: #fb7185;
-  --accent-hover: #f43f5e;
-  --success-color: #34d399;
-  --success-hover: #10b981;
-  --bg-page: #0f172a;
-  --bg-card: #1e293b;
-  --bg-card-secondary: #334155;
-  --border-color: #334155;
-  --border-light: #1e293b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-light: #64748b;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --ph-bg: #0b1120;
+  --ph-surface: #151f32;
+  --ph-surface-elevated: #1e293b;
+  --ph-surface-secondary: #1e293b;
+  --ph-border: #233149;
+  --ph-border-light: #182338;
+  --ph-text: #f8fafc;
+  --ph-text-muted: #94a3b8;
+  --ph-text-light: #64748b;
+  --ph-primary: #3b82f6;
+  --ph-primary-hover: #60a5fa;
+  --ph-primary-light: rgba(59, 130, 246, 0.18);
+  --ph-accent: #fb7185;
+  --ph-accent-hover: #f43f5e;
+  --ph-success: #34d399;
+  --ph-success-hover: #10b981;
+  --ph-warning: #fbbf24;
+  --ph-danger: #f87171;
+  --ph-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --ph-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --ph-shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.55);
 }
 
 /* Global Reset & Body */
@@ -691,4 +723,94 @@ body {
   background-color: var(--bg-body);
   transition: var(--transition-fast);
 }
+
+/* ============================================================
+   POSTHUB 3.0 — MOBILE BOTTOM NAVIGATION
+   ============================================================ */
+.ph-bottom-nav {
+  background-color: var(--ph-surface);
+  border-top-color: var(--ph-border) !important;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  height: 60px;
+  backdrop-filter: blur(8px);
+}
+
+.ph-bottom-nav-item {
+  flex: 1;
+  height: 100%;
+  gap: 2px;
+  transition: var(--ph-transition-fast);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.ph-bottom-nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.ph-bottom-nav-create-btn {
+  width: 44px;
+  height: 44px;
+  margin-top: -16px;
+  border: 3px solid var(--ph-surface);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ph-bottom-nav-create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.ph-bottom-nav-badge-dot {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 12px);
+  width: 8px;
+  height: 8px;
+  background-color: var(--ph-danger);
+  border-radius: 50%;
+  border: 2px solid var(--ph-surface);
+}
+
+/* Desktop Sidebar Styling */
+.ph-sidebar-link {
+  transition: var(--ph-transition-fast);
+  font-size: 0.95rem;
+}
+
+.ph-sidebar-link:hover {
+  background-color: var(--ph-surface-secondary);
+}
+
+.hover-bg:hover {
+  background-color: var(--ph-surface-secondary) !important;
+}
+
+.hover-primary:hover {
+  color: var(--ph-primary) !important;
+}
+
+/* Accessible focus ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ph-primary);
+  outline-offset: 2px;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 

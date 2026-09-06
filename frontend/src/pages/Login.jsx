@@ -27,8 +27,10 @@ export default function Login() {
     try {
       const res = await login(form);
       const token = res.data?.data?.token;
+      const refreshToken = res.data?.data?.refreshToken;
       if (token) {
         localStorage.setItem("token", token);
+        if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
         await refreshUser();
         showToast("Welcome back!", "success");
         navigate("/dashboard");

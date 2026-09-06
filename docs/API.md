@@ -1,8 +1,8 @@
-# PostHub 2.0 — Complete REST API Documentation
+# PostHub 3.0 — Enterprise-Style REST API Specification
 
-Base URL: `http://localhost:5000/api` (or production host)
+**Base URL:** `http://localhost:5000/api` (or configured `VITE_API_URL`)
 
-All responses follow a consistent envelope structure:
+All responses adhere strictly to enterprise envelope standards:
 
 **Success Response Envelope:**
 ```json
@@ -17,25 +17,36 @@ All responses follow a consistent envelope structure:
 ```json
 {
   "success": false,
-  "message": "Error details or validation message"
+  "message": "Error description or validation feedback"
+}
+```
+
+**Cursor Pagination Envelope:**
+```json
+{
+  "items": [],
+  "pagination": {
+    "hasMore": true,
+    "nextCursor": "2026-09-06T11:45:00.000Z",
+    "limit": 10
+  }
 }
 ```
 
 ---
 
-## 1. Authentication & Identity (`/api/auth`)
+## 1. Authentication & Session Security (`/api/auth`)
 
 ### 1.1 Register New User
 * **Method:** `POST`
 * **URL:** `/api/auth/register`
 * **Auth:** None
-* **Body (JSON):**
+* **Body:**
   ```json
   {
-    "name": "Jane Doe",
-    "email": "jane@example.com",
-    "password": "Password123!",
-    "username": "janedoe"
+    "name": "Alex Mercer",
+    "email": "alex@mercer.dev",
+    "password": "StrongPassword123!"
   }
   ```
 * **Response (201 Created):**
@@ -44,24 +55,26 @@ All responses follow a consistent envelope structure:
     "success": true,
     "message": "User registered successfully",
     "data": {
-      "_id": "60d0fe4f5311236168a109ca",
-      "name": "Jane Doe",
-      "username": "janedoe",
-      "email": "jane@example.com",
-      "role": "user"
+      "user": {
+        "_id": "60d0fe4f5311236168a109ca",
+        "name": "Alex Mercer",
+        "username": "alexmercer",
+        "email": "alex@mercer.dev",
+        "role": "user"
+      }
     }
   }
   ```
 
-### 1.2 User Login
+### 1.2 User Login (Dual Token Issue)
 * **Method:** `POST`
 * **URL:** `/api/auth/login`
 * **Auth:** None
-* **Body (JSON):**
+* **Body:**
   ```json
   {
-    "email": "jane@example.com",
-    "password": "Password123!"
+    "email": "alex@mercer.dev",
+    "password": "StrongPassword123!"
   }
   ```
 * **Response (200 OK):**
@@ -72,16 +85,55 @@ All responses follow a consistent envelope structure:
     "data": {
       "user": {
         "_id": "60d0fe4f5311236168a109ca",
-        "name": "Jane Doe",
-        "username": "janedoe",
-        "email": "jane@example.com",
-        "avatar": "",
+        "name": "Alex Mercer",
+        "username": "alexmercer",
+        "email": "alex@mercer.dev",
         "role": "user"
       },
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refreshToken": "8f48b9f71c4c..."
     }
   }
   ```
+
+### 1.3 Refresh Access Token
+* **Method:** `POST`
+* **URL:** `/api/auth/refresh`
+* **Auth:** None (Requires valid `refreshToken` in request payload)
+* **Body:**
+  ```json
+  {
+    "refreshToken": "8f48b9f71c4c..."
+  }
+  ```
+* **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Session refreshed successfully",
+    "data": {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refreshToken": "7e31a1b82e..."
+    }
+  }
+  ```
+
+### 1.4 Single Session Logout
+* **Method:** `POST`
+* **URL:** `/api/auth/logout`
+* **Auth:** Optional / Bearer Token
+* **Body:**
+  ```json
+  {
+    "refreshToken": "7e31a1b82e..."
+  }
+  ```
+
+### 1.5 Global Session Revocation (Logout All Devices)
+* **Method:** `POST`
+* **URL:** `/api/auth/logout-all`
+* **Auth:** Required (`Bearer <access_token>`)
+* **Response (200 OK):** Revokes all active refresh tokens for the authenticated user.
 
 ---
 
@@ -90,311 +142,190 @@ All responses follow a consistent envelope structure:
 ### 2.1 Get User Profile by Username
 * **Method:** `GET`
 * **URL:** `/api/users/profile/:username`
-* **Auth:** Optional (Bearer Token if authenticated)
-* **Response (200 OK):** Returns profile with bio, location, website, skills, follower/following counts, and `isFollowing` boolean.
-
-### 2.2 Update Profile Information
-* **Method:** `PUT`
-* **URL:** `/api/users/profile`
-* **Auth:** Required (`Bearer <token>`)
-* **Body (JSON):**
-  ```json
-  {
-    "name": "Jane Doe",
-    "bio": "Full-stack engineer & open-source contributor",
-    "location": "San Francisco, CA",
-    "website": "https://janedoe.dev",
-    "skills": ["React", "Node.js", "MongoDB", "Express"],
-    "socialLinks": {
-      "github": "https://github.com/janedoe",
-      "twitter": "https://twitter.com/janedoe",
-      "linkedin": "https://linkedin.com/in/janedoe"
-    }
-  }
-  ```
-
-### 2.3 Upload Avatar
-* **Method:** `POST`
-* **URL:** `/api/users/avatar`
-* **Auth:** Required
-* **Body:** `multipart/form-data` with `avatar` file field.
-
-### 2.4 Upload Cover Photo
-* **Method:** `POST`
-* **URL:** `/api/users/cover`
-* **Auth:** Required
-* **Body:** `multipart/form-data` with `coverImage` file field.
-
-### 2.5 Follow User
-* **Method:** `POST`
-* **URL:** `/api/users/:id/follow`
-* **Auth:** Required
-
-### 2.6 Unfollow User
-* **Method:** `DELETE`
-* **URL:** `/api/users/:id/follow`
-* **Auth:** Required
-
-### 2.7 Get User Followers
-* **Method:** `GET`
-* **URL:** `/api/users/:id/followers?page=1&limit=20`
-
-### 2.8 Get User Following
-* **Method:** `GET`
-* **URL:** `/api/users/:id/following?page=1&limit=20`
-
-### 2.9 Get Suggested Users to Follow
-* **Method:** `GET`
-* **URL:** `/api/users/suggestions?limit=5`
-* **Auth:** Required
-
----
-
-## 3. Posts & Rich Content (`/api/posts`)
-
-### 3.1 Get Social Posts Feed
-* **Method:** `GET`
-* **URL:** `/api/posts?page=1&limit=10&feedType=forYou&sort=latest`
-* **Query Parameters:**
-  * `page` (number)
-  * `limit` (number, max 50)
-  * `feedType`: `forYou` | `following` | `trending` | `latest`
-  * `sort`: `latest` | `trending` | `likes` | `comments`
-  * `tag`: Filter by hashtag without `#`
-  * `search`: Keyword search
-  * `authorId`: Filter by creator ObjectId
-
-### 3.2 Create Post (Multi-media, Poll, or Link)
-* **Method:** `POST`
-* **URL:** `/api/posts`
-* **Auth:** Required
-* **Body:** `multipart/form-data` or `application/json`
-  * `title`: String
-  * `content`: String
-  * `image` / `images`: Media file(s)
-  * `poll`: JSON string `{ question: "...", options: ["Option 1", "Option 2"] }`
-  * `linkPreview`: JSON string `{ url: "...", title: "...", description: "...", image: "..." }`
-
-### 3.3 Get Post by ID
-* **Method:** `GET`
-* **URL:** `/api/posts/:id`
-* **Auth:** Optional (returns `isLiked`, `isSaved`, `userVotedOption` if token provided)
-
-### 3.4 Update Post
-* **Method:** `PUT`
-* **URL:** `/api/posts/:id`
-* **Auth:** Required (Author only)
-
-### 3.5 Delete Post
-* **Method:** `DELETE`
-* **URL:** `/api/posts/:id`
-* **Auth:** Required (Author, Moderator, or Admin)
-
-### 3.6 Toggle Like Post
-* **Method:** `POST`
-* **URL:** `/api/posts/:id/like`
-* **Auth:** Required
-
-### 3.7 Toggle Bookmark / Save Post
-* **Method:** `POST`
-* **URL:** `/api/posts/:id/save`
-* **Auth:** Required
-
-### 3.8 Vote on Poll
-* **Method:** `POST`
-* **URL:** `/api/posts/:id/vote`
-* **Auth:** Required
-* **Body (JSON):** `{ "optionIndex": 0 }`
-
-### 3.9 Add Comment
-* **Method:** `POST`
-* **URL:** `/api/posts/:id/comments`
-* **Auth:** Required
-* **Body (JSON):** `{ "text": "Great insights!" }`
-
-### 3.10 Add Threaded Reply (Level 2)
-* **Method:** `POST`
-* **URL:** `/api/posts/:id/comments/:commentId/replies`
-* **Auth:** Required
-* **Body (JSON):** `{ "text": "Agreed, thanks for elaborating!" }`
-
-### 3.11 Delete Comment or Reply
-* **Method:** `DELETE`
-* **URL:** `/api/posts/:id/comments/:commentId`
-* **Auth:** Required (Comment author, Post author, or Moderator/Admin)
-
-### 3.12 Toggle Comment Like
-* **Method:** `POST`
-* **URL:** `/api/posts/:id/comments/:commentId/like`
-* **Auth:** Required
-
-### 3.13 Get Saved Posts
-* **Method:** `GET`
-* **URL:** `/api/posts/saved/me?page=1&limit=10`
-* **Auth:** Required
-
----
-
-## 4. Explore, Trending & Global Search (`/api/explore`)
-
-### 4.1 Get Trending Posts
-* **Method:** `GET`
-* **URL:** `/api/explore/trending?page=1&limit=10`
-
-### 4.2 Get Trending Hashtags
-* **Method:** `GET`
-* **URL:** `/api/explore/hashtags?limit=10`
-* **Response (200 OK):**
-  ```json
-  {
-    "success": true,
-    "data": [
-      { "tag": "react", "count": 28, "totalEngagement": 1240 },
-      { "tag": "nodejs", "count": 19, "totalEngagement": 820 }
-    ]
-  }
-  ```
-
-### 4.3 Get Posts by Hashtag
-* **Method:** `GET`
-* **URL:** `/api/explore/hashtags/:tag?page=1&limit=10`
-
-### 4.4 Global Server-Side Search
-* **Method:** `GET`
-* **URL:** `/api/explore/search?q=javascript`
+* **Auth:** Optional (Bearer token enables `isFollowing`, `isBlocked`, `isMuted`, and `mutualFollowers`)
 * **Response (200 OK):**
   ```json
   {
     "success": true,
     "data": {
-      "users": [ ... ],
-      "posts": [ ... ],
-      "hashtags": [ ... ]
+      "_id": "...",
+      "name": "Alex Mercer",
+      "username": "alexmercer",
+      "followersCount": 420,
+      "followingCount": 180,
+      "isFollowing": true,
+      "isBlocked": false,
+      "isMuted": false,
+      "mutualFollowers": [
+        { "_id": "...", "name": "Sarah Connor", "username": "sconnor" }
+      ]
     }
   }
   ```
 
----
-
-## 5. Notifications Center (`/api/notifications`)
-
-### 5.1 Get User Notifications
-* **Method:** `GET`
-* **URL:** `/api/notifications?page=1&limit=20`
+### 2.2 Update Account Settings & Privacy
+* **Method:** `PUT`
+* **URL:** `/api/users/settings`
 * **Auth:** Required
-
-### 5.2 Get Unread Notifications Count
-* **Method:** `GET`
-* **URL:** `/api/notifications/unread-count`
-* **Auth:** Required
-
-### 5.3 Mark Single Notification as Read
-* **Method:** `PATCH`
-* **URL:** `/api/notifications/:id/read`
-* **Auth:** Required
-
-### 5.4 Mark All Notifications as Read
-* **Method:** `PATCH`
-* **URL:** `/api/notifications/read-all`
-* **Auth:** Required
-
----
-
-## 6. Safety & Moderation Reports (`/api/reports`)
-
-### 6.1 Submit Report
-* **Method:** `POST`
-* **URL:** `/api/reports`
-* **Auth:** Required
-* **Body (JSON):**
+* **Body:**
   ```json
   {
-    "targetType": "POST",
-    "targetId": "60d0fe4f5311236168a109ca",
-    "reason": "SPAM",
-    "details": "Repetitive promotional messages"
+    "privacy": {
+      "profileVisibility": "public",
+      "whoCanComment": "everyone",
+      "whoCanMention": "followers"
+    },
+    "notificationSettings": {
+      "likes": true,
+      "comments": true,
+      "saves": false
+    }
   }
   ```
 
-### 6.2 Get Reports List (Moderator / Admin)
-* **Method:** `GET`
-* **URL:** `/api/reports?page=1&limit=20&status=PENDING`
-* **Auth:** Required (Admin or Moderator role)
+### 2.3 Change Password
+* **Method:** `POST`
+* **URL:** `/api/users/change-password`
+* **Auth:** Required
+* **Body:**
+  ```json
+  {
+    "currentPassword": "OldPassword123!",
+    "newPassword": "BrandNewSecurePassword456!"
+  }
+  ```
 
-### 6.3 Update Report Status
-* **Method:** `PATCH`
-* **URL:** `/api/reports/:id/status`
-* **Auth:** Required (Admin or Moderator role)
-* **Body (JSON):** `{ "status": "RESOLVED" }`
+### 2.4 Deactivate Account
+* **Method:** `POST`
+* **URL:** `/api/users/delete-account`
+* **Auth:** Required
+* **Body:**
+  ```json
+  {
+    "password": "PasswordForVerification!"
+  }
+  ```
 
----
+### 2.5 Block / Unblock User
+* **Block:** `POST /api/users/:id/block` (Severs mutual follow relationships and excludes content server-side)
+* **Unblock:** `DELETE /api/users/:id/block`
 
-## 7. Administrator Controls (`/api/admin`)
-
-*All admin endpoints require `role: admin` or `moderator`.*
-
-### 7.1 Platform Statistics
-* **Method:** `GET`
-* **URL:** `/api/admin/stats`
-
-### 7.2 Manage Users
-* **Method:** `GET`
-* **URL:** `/api/admin/users?page=1&limit=20&search=john`
-
-### 7.3 Suspend / Restore User
-* **Method:** `PATCH`
-* **URL:** `/api/admin/users/:id/suspend`
-
-### 7.4 Change User Role
-* **Method:** `PATCH`
-* **URL:** `/api/admin/users/:id/role`
-* **Body (JSON):** `{ "role": "moderator" }`
-
-### 7.5 Moderation Remove Post
-* **Method:** `DELETE`
-* **URL:** `/api/admin/posts/:id`
+### 2.6 Mute / Unmute User
+* **Mute:** `POST /api/users/:id/mute`
+* **Unmute:** `DELETE /api/users/:id/mute`
 
 ---
 
-## 8. Creator Analytics (`/api/analytics`)
+## 3. Modular Feed Engine & Posts (`/api/posts`)
 
-### 8.1 Get Creator Dashboard Analytics
+### 3.1 Fetch Feed with Cursor Pagination & Explainable Discovery
+* **Method:** `GET`
+* **URL:** `/api/posts`
+* **Auth:** Optional / Recommended
+* **Query Parameters:**
+  * `feedType`: `forYou` | `following` | `trending` | `latest`
+  * `cursor`: ISO date string (e.g. `2026-09-06T10:00:00.000Z`)
+  * `limit`: Number of records (1–50, default: 10)
+  * `tag`: Filter by normalized hashtag
+* **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "items": [
+        {
+          "_id": "...",
+          "title": "System Architecture at Scale",
+          "content": "A deep dive into distributed event brokers...",
+          "status": "PUBLISHED",
+          "discoveryReason": "Because you follow this creator",
+          "trendingScore": 142
+        }
+      ],
+      "pagination": {
+        "hasMore": true,
+        "nextCursor": "2026-09-06T09:12:00.000Z",
+        "limit": 10
+      }
+    }
+  }
+  ```
+
+### 3.2 My Posts (Status Lifecycle Management)
+* **Method:** `GET`
+* **URL:** `/api/posts/me`
+* **Auth:** Required
+* **Query Parameters:** `status=PUBLISHED|DRAFT|ARCHIVED`, `page=1`, `limit=10`
+
+### 3.3 Archive / Restore Post
+* **Method:** `PATCH`
+* **URL:** `/api/posts/:id/archive`
+* **Auth:** Required (Author only)
+* **Response (200 OK):** Toggles between `ARCHIVED` and `PUBLISHED`.
+
+---
+
+## 4. Creator Analytics (`/api/analytics`)
+
+### 4.1 Get Creator Telemetry
 * **Method:** `GET`
 * **URL:** `/api/analytics/me`
 * **Auth:** Required
+* **Query Parameters:** `period=7d|30d|90d|all`
 * **Response (200 OK):**
   ```json
   {
     "success": true,
     "data": {
-      "followersCount": 42,
-      "followingCount": 18,
-      "totalPosts": 15,
-      "totalLikes": 120,
-      "totalComments": 45,
-      "totalSaves": 12,
-      "engagementRate": 11.8,
-      "breakdown": { "text": 8, "image": 5, "poll": 1, "link": 1 },
-      "topPosts": [ ... ],
-      "timeline": [ ... ]
+      "period": "30d",
+      "totalPosts": 14,
+      "totalLikes": 182,
+      "totalComments": 48,
+      "totalSaves": 29,
+      "engagementRate": 18.5,
+      "breakdown": {
+        "text": 6,
+        "image": 5,
+        "poll": 2,
+        "link": 1
+      },
+      "topPosts": [],
+      "timeline": []
     }
   }
   ```
 
 ---
 
-## 9. Health & System Observability (`/api/health`)
+## 5. Administration & Compliance Audit Trail (`/api/admin`)
 
-### 9.1 Service Health Check
+### 5.1 Platform KPIs & Metrics
 * **Method:** `GET`
-* **URL:** `/api/health`
+* **URL:** `/api/admin/stats`
+* **Auth:** Admin / Moderator role
+
+### 5.2 Immutable Audit Trail
+* **Method:** `GET`
+* **URL:** `/api/admin/audit-logs`
+* **Auth:** Admin role
+* **Query Parameters:** `page=1`, `limit=50`
 * **Response (200 OK):**
   ```json
   {
-    "status": "ok",
-    "service": "posthub-api",
-    "version": "2.0.0",
-    "timestamp": "2026-09-06T11:15:00.000Z",
-    "uptime": 124.52
+    "success": true,
+    "data": {
+      "logs": [
+        {
+          "_id": "...",
+          "action": "USER_SUSPENDED",
+          "actor": { "name": "Admin", "username": "admin" },
+          "targetType": "USER",
+          "targetId": "...",
+          "details": { "isSuspended": true },
+          "createdAt": "2026-09-06T10:30:00.000Z"
+        }
+      ],
+      "total": 42
+    }
   }
   ```

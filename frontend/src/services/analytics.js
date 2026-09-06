@@ -1,3 +1,4 @@
 import API from "./api";
 
-export const getCreatorAnalytics = () => API.get("/analytics/me");
+export const getCreatorAnalytics = (period = "30d") =>
+  API.get("/analytics/me", { params: { period } });

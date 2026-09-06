@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Container, Row, Col, Button, Modal, Form, Spinner, Badge, Nav } from "react-bootstrap";
+import { Container, Row, Col, Button, Modal, Form, Spinner, Badge, Nav, Dropdown } from "react-bootstrap";
 import { 
   FiMapPin, 
   FiGlobe, 
@@ -14,7 +14,12 @@ import {
   FiCheckCircle, 
   FiFileText, 
   FiImage, 
-  FiBookmark 
+  FiBookmark,
+  FiSlash,
+  FiVolumeX,
+  FiVolume2,
+  FiUsers,
+  FiMoreHorizontal
 } from "react-icons/fi";
 import { 
   getProfileByUsername, 
@@ -24,12 +29,17 @@ import {
   followUser, 
   unfollowUser, 
   getFollowers, 
-  getFollowing 
+  getFollowing,
+  blockUser,
+  unblockUser,
+  muteUser,
+  unmuteUser
 } from "../services/users";
 import { getPosts, getSavedPosts } from "../services/posts";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import PostCard from "../components/PostCard";
+import ProfileSkeleton from "../components/ProfileSkeleton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 
@@ -169,11 +179,48 @@ export default function Profile() {
         isFollowing: currentlyFollowing,
         followersCount: Math.max(0, (prev.followersCount || 0) + (currentlyFollowing ? 1 : -1)),
       }));
-      showToast(err.response?.data?.message || "Action failed.", "danger");
+      showToast(err.response?.data?.message || "Failed to update follow status.", "danger");
     } finally {
       setFollowPending(false);
     }
   };
+
+  const handleBlockToggle = async () => {
+    if (!profile) return;
+    try {
+      if (profile.isBlocked) {
+        await unblockUser(profile._id);
+        setProfile((prev) => ({ ...prev, isBlocked: false }));
+        showToast(`Unblocked @${profile.username}`, "info");
+      } else {
+        if (window.confirm(`Are you sure you want to block @${profile.username}? They will no longer be able to follow or view your posts.`)) {
+          await blockUser(profile._id);
+          setProfile((prev) => ({ ...prev, isBlocked: true, isFollowing: false }));
+          showToast(`Blocked @${profile.username}`, "warning");
+        }
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Action failed", "danger");
+    }
+  };
+
+  const handleMuteToggle = async () => {
+    if (!profile) return;
+    try {
+      if (profile.isMuted) {
+        await unmuteUser(profile._id);
+        setProfile((prev) => ({ ...prev, isMuted: false }));
+        showToast(`Unmuted @${profile.username}`, "info");
+      } else {
+        await muteUser(profile._id);
+        setProfile((prev) => ({ ...prev, isMuted: true }));
+        showToast(`Muted @${profile.username}`, "warning");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Action failed", "danger");
+    }
+  };
+
 
   // Open Follow List Modal
   const handleOpenFollowList = async (type) => {
@@ -270,8 +317,10 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <main className="py-5">
-        <LoadingSpinner message="Loading profile..." />
+      <main className="py-4">
+        <Container style={{ maxWidth: "820px" }}>
+          <ProfileSkeleton />
+        </Container>
       </main>
     );
   }
@@ -375,22 +424,38 @@ export default function Profile() {
                   <FiEdit /> Edit Profile
                 </Button>
               ) : (
-                <Button
-                  variant={profile.isFollowing ? "outline-secondary" : "primary"}
-                  className="d-flex align-items-center gap-1.5 rounded-pill px-4 py-1.5 fw-medium"
-                  onClick={handleFollowToggle}
-                  disabled={followPending}
-                >
-                  {profile.isFollowing ? (
-                    <>
-                      <FiUserCheck /> Following
-                    </>
-                  ) : (
-                    <>
-                      <FiUserPlus /> Follow
-                    </>
-                  )}
-                </Button>
+                <div className="d-flex align-items-center gap-2">
+                  <Button
+                    variant={profile.isFollowing ? "outline-secondary" : "primary"}
+                    className="d-flex align-items-center gap-1.5 rounded-pill px-4 py-1.5 fw-medium"
+                    onClick={handleFollowToggle}
+                    disabled={followPending}
+                  >
+                    {profile.isFollowing ? (
+                      <>
+                        <FiUserCheck /> Following
+                      </>
+                    ) : (
+                      <>
+                        <FiUserPlus /> Follow
+                      </>
+                    )}
+                  </Button>
+
+                  <Dropdown align="end">
+                    <Dropdown.Toggle variant="outline-secondary" size="sm" className="rounded-circle p-1.5 d-flex align-items-center justify-content-center" style={{ width: 34, height: 34 }}>
+                      <FiMoreHorizontal />
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={handleMuteToggle} className="d-flex align-items-center gap-2">
+                        {profile.isMuted ? <><FiVolume2 /> Unmute @{profile.username}</> : <><FiVolumeX /> Mute @{profile.username}</>}
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={handleBlockToggle} className="d-flex align-items-center gap-2 text-danger">
+                        <FiSlash /> {profile.isBlocked ? `Unblock @${profile.username}` : `Block @${profile.username}`}
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
               )}
             </div>
           </div>
@@ -407,6 +472,17 @@ export default function Profile() {
               )}
             </div>
             <span className="text-muted">@{profile.username}</span>
+
+            {/* Mutual Followers */}
+            {profile.mutualFollowers && profile.mutualFollowers.length > 0 && (
+              <div className="text-muted small d-flex align-items-center gap-1.5 mt-1">
+                <FiUsers className="text-primary" size={14} />
+                <span>
+                  Followed by{" "}
+                  <strong>{profile.mutualFollowers.map((m) => m.name).join(", ")}</strong>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Bio */}

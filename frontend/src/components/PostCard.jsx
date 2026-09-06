@@ -14,7 +14,8 @@ import {
   FiFlag,
   FiCheckCircle,
   FiCornerDownRight,
-  FiExternalLink
+  FiExternalLink,
+  FiTrendingUp
 } from "react-icons/fi";
 import { formatTimeAgo } from "../utils/timeAgo";
 import { 
@@ -78,6 +79,9 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+
+  // Content truncation state
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Check ownership or admin
   const postUserId = typeof post.user === "object" ? post.user?._id : post.user;
@@ -304,6 +308,14 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
 
   return (
     <article className="post-card" id={post._id}>
+      {/* Explainable Discovery Header Pill */}
+      {post.discoveryReason && (
+        <div className="d-flex align-items-center gap-1.5 px-3 pt-3 pb-0 text-muted small">
+          <FiTrendingUp size={13} className="text-primary" />
+          <span className="fw-medium">{post.discoveryReason}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="post-card-header">
         <div className="d-flex align-items-center gap-3">
@@ -387,7 +399,24 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
       {/* Body */}
       <div className="post-card-body">
         {post.title && <h5 className="post-title">{post.title}</h5>}
-        {post.content && <p className="post-content">{post.content}</p>}
+        {post.content && (
+          <div className="post-content-container mb-3">
+            <p className="post-content mb-1" style={{ whiteSpace: "pre-line" }}>
+              {post.content.length > 300 && !isExpanded
+                ? `${post.content.slice(0, 300)}...`
+                : post.content}
+            </p>
+            {post.content.length > 300 && (
+              <button
+                type="button"
+                className="btn btn-link p-0 text-primary fw-semibold small text-decoration-none"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? "Show less" : "Read more"}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Hashtags */}
         {post.hashtags && post.hashtags.length > 0 && (

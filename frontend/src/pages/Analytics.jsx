@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card, ProgressBar, Badge } from "react-bootstrap";
+import { Container, Row, Col, Card, ProgressBar, Badge, ButtonGroup, Button } from "react-bootstrap";
 import { 
   FiBarChart2, 
   FiFileText, 
@@ -13,18 +13,21 @@ import {
 } from "react-icons/fi";
 import { getCreatorAnalytics } from "../services/analytics";
 import { useToast } from "../context/ToastContext";
+import AnalyticsSkeleton from "../components/AnalyticsSkeleton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 
 export default function Analytics() {
   const { showToast } = useToast();
   const [data, setData] = useState(null);
+  const [period, setPeriod] = useState("30d");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadAnalytics = async () => {
+      setLoading(true);
       try {
-        const res = await getCreatorAnalytics();
+        const res = await getCreatorAnalytics(period);
         setData(res.data?.data);
       } catch {
         showToast("Failed to load analytics.", "danger");
@@ -33,12 +36,22 @@ export default function Analytics() {
       }
     };
     loadAnalytics();
-  }, [showToast]);
+  }, [period, showToast]);
 
   if (loading) {
     return (
-      <main className="py-5">
-        <LoadingSpinner message="Calculating creator insights..." />
+      <main className="analytics-page py-4">
+        <Container style={{ maxWidth: "860px" }}>
+          <div className="mb-4">
+            <h4 className="fw-bold mb-1 d-flex align-items-center gap-2">
+              <FiBarChart2 className="text-primary" /> Creator Analytics & Insights
+            </h4>
+            <p className="text-muted small mb-0">
+              Calculating real performance telemetry from your community content...
+            </p>
+          </div>
+          <AnalyticsSkeleton />
+        </Container>
       </main>
     );
   }
@@ -72,13 +85,46 @@ export default function Analytics() {
   return (
     <main className="analytics-page py-4">
       <Container style={{ maxWidth: "860px" }}>
-        <div className="mb-4">
-          <h4 className="fw-bold mb-1 d-flex align-items-center gap-2">
-            <FiBarChart2 className="text-primary" /> Creator Analytics & Insights
-          </h4>
-          <p className="text-muted small mb-0">
-            Real performance telemetry calculated from your community content.
-          </p>
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+          <div>
+            <h4 className="fw-bold mb-1 d-flex align-items-center gap-2">
+              <FiBarChart2 className="text-primary" /> Creator Analytics & Insights
+            </h4>
+            <p className="text-muted small mb-0">
+              Real performance telemetry calculated from your community content.
+            </p>
+          </div>
+
+          <ButtonGroup size="sm">
+            <Button
+              variant={period === "7d" ? "primary" : "outline-secondary"}
+              onClick={() => setPeriod("7d")}
+              className="fw-medium px-3"
+            >
+              7 Days
+            </Button>
+            <Button
+              variant={period === "30d" ? "primary" : "outline-secondary"}
+              onClick={() => setPeriod("30d")}
+              className="fw-medium px-3"
+            >
+              30 Days
+            </Button>
+            <Button
+              variant={period === "90d" ? "primary" : "outline-secondary"}
+              onClick={() => setPeriod("90d")}
+              className="fw-medium px-3"
+            >
+              90 Days
+            </Button>
+            <Button
+              variant={period === "all" ? "primary" : "outline-secondary"}
+              onClick={() => setPeriod("all")}
+              className="fw-medium px-3"
+            >
+              All Time
+            </Button>
+          </ButtonGroup>
         </div>
 
         {/* Primary Metric KPI Cards */}

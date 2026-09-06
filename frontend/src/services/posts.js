@@ -53,3 +53,7 @@ export const addReply = (postId, commentId, text) =>
 
 export const toggleCommentLike = (postId, commentId) =>
   API.post(`/posts/${postId}/comments/${commentId}/like`);
+
+export const getMyPosts = (params = {}) => API.get("/posts/me", { params });
+
+export const archivePost = (id) => API.patch(`/posts/${id}/archive`);

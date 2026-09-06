@@ -11,7 +11,7 @@ import {
   FiLock, 
   FiUnlock 
 } from "react-icons/fi";
-import { getAdminStats, getAdminUsers, toggleUserSuspension, updateUserRole } from "../services/admin";
+import { getAdminStats, getAdminUsers, toggleUserSuspension, updateUserRole, getAuditLogs } from "../services/admin";
 import { getReports, updateReportStatus } from "../services/reports";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
@@ -22,10 +22,11 @@ export default function Admin() {
   const { user } = useUser();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState("overview"); // overview, reports, users
+  const [activeTab, setActiveTab] = useState("overview"); // overview, reports, users, audit
   const [stats, setStats] = useState(null);
   const [reports, setReports] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [userSearch, setUserSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -34,20 +35,23 @@ export default function Admin() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, reportsRes, usersRes] = await Promise.all([
+      const [statsRes, reportsRes, usersRes, auditRes] = await Promise.all([
         getAdminStats(),
         getReports({ status: "ALL", limit: 30 }),
         getAdminUsers({ limit: 30 }),
+        getAuditLogs({ limit: 40 }),
       ]);
       setStats(statsRes.data?.data);
       setReports(reportsRes.data?.data?.reports || []);
       setUsersList(usersRes.data?.data?.users || []);
+      setAuditLogs(auditRes.data?.data?.logs || []);
     } catch {
       showToast("Failed to load admin data.", "danger");
     } finally {
       setLoading(false);
     }
   }, [showToast]);
+
 
   useEffect(() => {
     loadData();
@@ -174,6 +178,15 @@ export default function Admin() {
               className="cursor-pointer py-1.5 px-3 small"
             >
               User Management
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link
+              active={activeTab === "audit"}
+              onClick={() => setActiveTab("audit")}
+              className="cursor-pointer py-1.5 px-3 small"
+            >
+              Compliance Audit Trail
             </Nav.Link>
           </Nav.Item>
         </Nav>
@@ -401,6 +414,66 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </Table>
+            </div>
+          </Card>
+        )}
+
+        {/* 4. Compliance Audit Trail Tab */}
+        {activeTab === "audit" && (
+          <Card className="p-4 border shadow-sm">
+            <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
+              <FiShield className="text-warning" /> Immutable Compliance Audit Trail
+            </h6>
+            <p className="text-muted small mb-3">
+              Server-side tamper-evident event log recording role mutations, content purges, and security suspensions.
+            </p>
+
+            <div className="table-responsive">
+              <Table hover align="middle" className="mb-0 small">
+                <thead className="table-light">
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Actor</th>
+                    <th>Target Type</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-4 text-muted">
+                        No audit events recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditLogs.map((log) => (
+                      <tr key={log._id}>
+                        <td className="text-muted" style={{ whiteSpace: "nowrap" }}>
+                          {new Date(log.createdAt).toLocaleString()}
+                        </td>
+                        <td>
+                          <Badge bg="secondary" className="fw-medium font-monospace">
+                            {log.action}
+                          </Badge>
+                        </td>
+                        <td>
+                          <strong>{log.actor?.name || "System"}</strong>
+                          <span className="text-muted ms-1">(@{log.actor?.username || "root"})</span>
+                        </td>
+                        <td>
+                          <Badge bg="light" text="dark" className="border">
+                            {log.targetType}
+                          </Badge>
+                        </td>
+                        <td className="text-muted font-monospace" style={{ fontSize: "11px" }}>
+                          {JSON.stringify(log.details || {})}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </Table>
             </div>

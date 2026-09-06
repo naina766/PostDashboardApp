@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Container, Button, Badge } from "react-bootstrap";
 import { 
@@ -9,12 +9,13 @@ import {
   FiCornerDownRight, 
   FiAtSign, 
   FiBookmark, 
-  FiCheck 
+  FiCheck,
+  FiCheckCircle 
 } from "react-icons/fi";
 import { getNotifications, markAsRead, markAllAsRead } from "../services/notifications";
 import { formatTimeAgo } from "../utils/timeAgo";
 import { useToast } from "../context/ToastContext";
-import LoadingSpinner from "../components/LoadingSpinner";
+import NotificationSkeleton from "../components/NotificationSkeleton";
 import EmptyState from "../components/EmptyState";
 
 export default function Notifications() {
@@ -26,7 +27,7 @@ export default function Notifications() {
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getNotifications({ page: 1, limit: 30 });
+      const res = await getNotifications({ page: 1, limit: 50 });
       setNotifications(res.data?.data?.notifications || []);
     } catch {
       showToast("Failed to load notifications.", "danger");
@@ -82,7 +83,106 @@ export default function Notifications() {
     }
   };
 
+  // Group notifications into Today, Yesterday, and Earlier
+  const groupedNotifications = useMemo(() => {
+    const today = [];
+    const yesterday = [];
+    const earlier = [];
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+
+    notifications.forEach((item) => {
+      const itemDate = new Date(item.createdAt);
+      if (itemDate >= startOfToday) {
+        today.push(item);
+      } else if (itemDate >= startOfYesterday) {
+        yesterday.push(item);
+      } else {
+        earlier.push(item);
+      }
+    });
+
+    return [
+      { label: "Today", items: today },
+      { label: "Yesterday", items: yesterday },
+      { label: "Earlier", items: earlier },
+    ].filter((group) => group.items.length > 0);
+  }, [notifications]);
+
   const hasUnread = notifications.some((n) => !n.read);
+
+  const renderNotificationItem = (n) => {
+    const actor = n.actor || { name: "Someone", username: "user" };
+    const post = n.post;
+
+    return (
+      <div
+        key={n._id}
+        className={`list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between gap-3 border-0 border-bottom ${
+          !n.read ? "bg-primary-subtle" : ""
+        }`}
+        onClick={() => !n.read && handleMarkAsRead(n._id)}
+        style={{ cursor: "pointer", transition: "background-color 0.2s ease" }}
+      >
+        <div className="d-flex align-items-center gap-3">
+          <div className="notification-icon-wrapper rounded-circle p-2 bg-body d-flex align-items-center justify-content-center shadow-sm">
+            {getIconForType(n.type)}
+          </div>
+
+          <Link to={`/profile/${actor.username}`} className="text-decoration-none" onClick={(e) => e.stopPropagation()}>
+            {actor.avatar ? (
+              <img
+                src={actor.avatar}
+                alt={actor.name}
+                className="rounded-circle object-fit-cover"
+                style={{ width: 40, height: 40 }}
+              />
+            ) : (
+              <div
+                className="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small"
+                style={{ width: 40, height: 40 }}
+              >
+                {(actor.name || "U")[0].toUpperCase()}
+              </div>
+            )}
+          </Link>
+
+          <div>
+            <div className="small">
+              <Link
+                to={`/profile/${actor.username}`}
+                className="fw-bold text-body text-decoration-none hover-underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {actor.name}
+              </Link>{" "}
+              <span className="text-muted">{n.message || "interacted with you"}</span>
+              {post && (
+                <Link
+                  to={`/dashboard#${post._id}`}
+                  className="text-primary text-decoration-none ms-1 fw-medium"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  "{post.title ? post.title.slice(0, 30) : post.content?.slice(0, 30)}..."
+                </Link>
+              )}
+            </div>
+            <span className="text-muted small" style={{ fontSize: "11px" }}>
+              {formatTimeAgo(n.createdAt)}
+            </span>
+          </div>
+        </div>
+
+        {!n.read && (
+          <Badge bg="primary" pill className="p-1" title="Unread">
+            {" "}
+          </Badge>
+        )}
+      </div>
+    );
+  };
 
   return (
     <main className="notifications-page py-4">
@@ -109,76 +209,39 @@ export default function Notifications() {
         </div>
 
         {loading ? (
-          <LoadingSpinner message="Loading notifications..." />
+          <div>
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+          </div>
         ) : notifications.length === 0 ? (
           <EmptyState
             title="All caught up!"
-            description="You don't have any notifications right now. When someone interacts with your posts, you will see it here."
+            message="You don't have any notifications right now. When someone interacts with your posts, you will see it here."
             actionText="Browse Feed"
             actionLink="/dashboard"
           />
         ) : (
-          <div className="list-group rounded-4 border shadow-sm overflow-hidden">
-            {notifications.map((n) => {
-              const actor = n.actor || { name: "Someone", username: "user" };
-              const post = n.post;
-
-              return (
-                <div
-                  key={n._id}
-                  className={`list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between gap-3 ${!n.read ? "bg-primary-subtle" : ""}`}
-                  onClick={() => !n.read && handleMarkAsRead(n._id)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="notification-icon-wrapper rounded-circle p-2 bg-body d-flex align-items-center justify-content-center shadow-sm">
-                      {getIconForType(n.type)}
-                    </div>
-
-                    <Link to={`/profile/${actor.username}`} className="text-decoration-none">
-                      {actor.avatar ? (
-                        <img
-                          src={actor.avatar}
-                          alt={actor.name}
-                          className="rounded-circle object-fit-cover"
-                          style={{ width: 40, height: 40 }}
-                        />
-                      ) : (
-                        <div
-                          className="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small"
-                          style={{ width: 40, height: 40 }}
-                        >
-                          {(actor.name || "U")[0].toUpperCase()}
-                        </div>
-                      )}
-                    </Link>
-
-                    <div>
-                      <div className="small">
-                        <Link to={`/profile/${actor.username}`} className="fw-bold text-body text-decoration-none">
-                          {actor.name}
-                        </Link>{" "}
-                        <span className="text-muted">{n.message || "interacted with you"}</span>
-                        {post && (
-                          <Link to={`/dashboard#${post._id}`} className="text-primary text-decoration-none ms-1">
-                            "{post.title ? post.title.slice(0, 30) : post.content?.slice(0, 30)}..."
-                          </Link>
-                        )}
-                      </div>
-                      <span className="text-muted small" style={{ fontSize: "11px" }}>
-                        {formatTimeAgo(n.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {!n.read && (
-                    <Badge bg="primary" pill className="p-1">
-                      {" "}
-                    </Badge>
-                  )}
+          <div className="d-flex flex-column gap-3">
+            {groupedNotifications.map((group) => (
+              <div key={group.label} className="notification-group">
+                <div className="d-flex align-items-center justify-content-between px-2 mb-2">
+                  <h6 className="fw-bold text-muted text-uppercase mb-0" style={{ fontSize: "12px", letterSpacing: "0.5px" }}>
+                    {group.label}
+                  </h6>
+                  <span className="badge bg-secondary-subtle text-secondary small rounded-pill">
+                    {group.items.length}
+                  </span>
                 </div>
-              );
-            })}
+                <div className="list-group rounded-4 border shadow-sm overflow-hidden bg-card">
+                  {group.items.map(renderNotificationItem)}
+                </div>
+              </div>
+            ))}
+
+            <div className="text-center py-3 text-muted small d-flex align-items-center justify-content-center gap-1">
+              <FiCheckCircle size={14} className="text-success" /> You're up to date with your activity.
+            </div>
           </div>
         )}
       </Container>

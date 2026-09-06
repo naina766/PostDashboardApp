@@ -16,6 +16,7 @@ import { getSuggestions, followUser, unfollowUser } from "../services/users";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import PostCard from "../components/PostCard";
+import PostSkeleton from "../components/PostSkeleton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 
@@ -25,7 +26,8 @@ export default function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialTag = searchParams.get("tag") || "";
-  const [searchQuery, setSearchQuery] = useState("");
+  const initialQuery = searchParams.get("q") || "";
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [activeTab, setActiveTab] = useState(initialTag ? "hashtag" : "trending");
   const [currentTag, setCurrentTag] = useState(initialTag);
 
@@ -77,14 +79,31 @@ export default function Explore() {
     loadPosts();
   }, [loadPosts]);
 
-  // Sync with URL param tag
+  // Sync with URL param tag and q
   useEffect(() => {
     const urlTag = searchParams.get("tag");
+    const urlQuery = searchParams.get("q");
+
     if (urlTag && urlTag !== currentTag) {
       setCurrentTag(urlTag);
       setActiveTab("hashtag");
     }
-  }, [searchParams, currentTag]);
+
+    if (urlQuery && urlQuery !== searchQuery) {
+      setSearchQuery(urlQuery);
+      setSearching(true);
+      globalSearch(urlQuery.trim())
+        .then((res) => {
+          setSearchResults(res.data?.data || { users: [], posts: [], hashtags: [] });
+        })
+        .catch(() => {
+          setSearchResults({ users: [], posts: [], hashtags: [] });
+        })
+        .finally(() => {
+          setSearching(false);
+        });
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Server-side debounced search
   const handleSearchChange = (e) => {
@@ -289,7 +308,11 @@ export default function Explore() {
               </Nav>
 
               {loading ? (
-                <LoadingSpinner message="Discovering top content..." />
+                <div>
+                  <PostSkeleton />
+                  <PostSkeleton />
+                  <PostSkeleton />
+                </div>
               ) : trendingPosts.length === 0 ? (
                 <EmptyState
                   title={currentTag ? `No posts with #${currentTag}` : "No trending posts right now"}

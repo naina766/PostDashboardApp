@@ -204,6 +204,55 @@ export default function CreatePost() {
     }
   };
 
+  const handleSaveDraft = async () => {
+    if (!content.trim() && !title.trim() && imageFiles.length === 0 && !pollQuestion.trim() && !linkUrl.trim()) {
+      showToast("Draft is empty. Enter some content before saving.", "warning");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      if (title.trim()) formData.append("title", title.trim());
+      if (content.trim()) formData.append("content", content.trim());
+      formData.append("postType", postType);
+      formData.append("status", "DRAFT");
+
+      if (imageFiles.length === 1) {
+        formData.append("image", imageFiles[0]);
+      } else if (imageFiles.length > 1) {
+        imageFiles.forEach((file) => formData.append("images", file));
+      }
+
+      if (postType === "POLL" && pollQuestion.trim()) {
+        const pollData = {
+          question: pollQuestion.trim(),
+          options: pollOptions.filter((o) => o.trim().length > 0).map((t) => ({ text: t.trim() })),
+        };
+        formData.append("poll", JSON.stringify(pollData));
+      }
+
+      if (postType === "LINK" && linkUrl.trim()) {
+        const preview = {
+          url: linkUrl.trim(),
+          title: linkTitle.trim() || linkUrl.trim(),
+          description: linkDesc.trim() || "",
+        };
+        formData.append("linkPreview", JSON.stringify(preview));
+      }
+
+      await createPost(formData);
+      localStorage.removeItem("posthub_draft");
+      showToast("Draft saved successfully!", "success");
+      navigate("/dashboard");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to save draft.", "danger");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <main className="py-4">
       <Container style={{ maxWidth: "680px" }}>
@@ -421,6 +470,15 @@ export default function CreatePost() {
               <div className="d-flex align-items-center gap-2">
                 <Button as={Link} to="/dashboard" variant="outline-secondary" size="sm" disabled={loading}>
                   Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={handleSaveDraft}
+                  disabled={loading}
+                >
+                  Save as Draft
                 </Button>
                 <Button
                   type="submit"
