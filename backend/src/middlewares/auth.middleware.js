@@ -10,9 +10,24 @@ export const authMiddleware = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!token || token === "undefined" || token === "null") {
+      throw new ApiError(401, "Authentication required");
+    }
 
-    const user = await User.findById(decoded.id);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      throw new ApiError(401, "Invalid or expired session token. Please log in again.");
+    }
+
+    let user;
+    try {
+      user = await User.findById(decoded.id);
+    } catch {
+      throw new ApiError(401, "User not found or invalid session");
+    }
+
     if (!user) throw new ApiError(401, "User not found");
     if (user.isSuspended) {
       throw new ApiError(403, "Your account has been suspended by an administrator");

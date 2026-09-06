@@ -18,6 +18,24 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
+  if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError" || err.message?.includes("jwt")) {
+    return sendResponse(res, {
+      statusCode: 401,
+      success: false,
+      message: "Invalid or expired session token. Please log in again.",
+      error: { code: "UNAUTHORIZED", message: err.message },
+    });
+  }
+
+  if (err.name === "CastError") {
+    return sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: `Invalid identifier: ${err.value}`,
+      error: { code: "INVALID_IDENTIFIER" },
+    });
+  }
+
   if (err instanceof multer.MulterError) {
     const msg = err.code === "LIMIT_FILE_SIZE" ? "Image size cannot exceed 5MB" : err.message;
     return sendResponse(res, {

@@ -28,24 +28,26 @@ export function LeftSidebar() {
   const isAdminOrMod = ["admin", "moderator"].includes(user.role);
 
   return (
-    <aside className="ph-left-sidebar d-none d-lg-flex flex-column gap-3 sticky-top" style={{ top: "80px" }}>
-      <Card className="border-0 shadow-sm rounded-4 p-3 bg-card">
+    <aside className="ph-left-sidebar d-none d-lg-flex flex-column sticky-top" style={{ top: "80px" }}>
+      <div className="ph-left-sidebar-card">
         {/* User Profile Mini Header */}
         <Link
           to={`/profile/${user.username || ""}`}
-          className="d-flex align-items-center gap-2.5 p-2 rounded-3 text-decoration-none text-body hover-bg mb-2"
+          className="ph-sidebar-profile"
+          title="View your profile"
+          aria-label="View your profile"
         >
           {user.avatar ? (
             <img
               src={user.avatar}
               alt={user.name}
               className="rounded-circle object-fit-cover flex-shrink-0"
-              style={{ width: 38, height: 38 }}
+              style={{ width: 40, height: 40 }}
             />
           ) : (
             <div
-              className="post-author-avatar rounded-circle flex-shrink-0"
-              style={{ width: 38, height: 38, fontSize: "0.95rem" }}
+              className="post-author-avatar rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center fw-bold"
+              style={{ width: 40, height: 40, fontSize: "1rem" }}
               aria-hidden="true"
             >
               {(user.name || "U").charAt(0).toUpperCase()}
@@ -53,20 +55,19 @@ export function LeftSidebar() {
           )}
           <div className="overflow-hidden">
             <div className="fw-semibold text-truncate small">{user.name}</div>
-            <div className="text-muted text-truncate" style={{ fontSize: "0.75rem" }}>
+            <div className="text-muted text-truncate" style={{ fontSize: "0.8rem" }}>
               @{user.username}
             </div>
           </div>
         </Link>
 
-        <nav className="d-flex flex-column gap-1" aria-label="Main Navigation">
+        {/* Primary Application Navigation */}
+        <nav className="ph-sidebar-nav" aria-label="Main Navigation">
           <NavLink
             to="/dashboard"
             end
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2 rounded-3 text-decoration-none fw-medium ${
-                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
-              }`
+              `ph-sidebar-link ${isActive ? "active" : ""}`
             }
           >
             <FiHome size={18} />
@@ -76,9 +77,7 @@ export function LeftSidebar() {
           <NavLink
             to="/explore"
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2 rounded-3 text-decoration-none fw-medium ${
-                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
-              }`
+              `ph-sidebar-link ${isActive ? "active" : ""}`
             }
           >
             <FiCompass size={18} />
@@ -88,9 +87,7 @@ export function LeftSidebar() {
           <NavLink
             to="/notifications"
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2 rounded-3 text-decoration-none fw-medium ${
-                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
-              }`
+              `ph-sidebar-link ${isActive ? "active" : ""}`
             }
           >
             <FiBell size={18} />
@@ -100,9 +97,7 @@ export function LeftSidebar() {
           <NavLink
             to="/saved"
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2.5 rounded-3 text-decoration-none fw-medium ${
-                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
-              }`
+              `ph-sidebar-link ${isActive ? "active" : ""}`
             }
           >
             <FiBookmark size={18} />
@@ -112,9 +107,7 @@ export function LeftSidebar() {
           <NavLink
             to="/creator"
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2.5 rounded-3 text-decoration-none fw-medium ${
-                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
-              }`
+              `ph-sidebar-link ${isActive ? "active" : ""}`
             }
           >
             <FiBarChart2 size={18} />
@@ -124,9 +117,7 @@ export function LeftSidebar() {
           <NavLink
             to={`/profile/${user.username || ""}`}
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2.5 rounded-3 text-decoration-none fw-medium ${
-                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
-              }`
+              `ph-sidebar-link ${isActive ? "active" : ""}`
             }
           >
             <FiUsers size={18} />
@@ -136,9 +127,7 @@ export function LeftSidebar() {
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2.5 rounded-3 text-decoration-none fw-medium ${
-                isActive ? "active text-primary bg-primary-subtle" : "text-body hover-bg"
-              }`
+              `ph-sidebar-link ${isActive ? "active" : ""}`
             }
           >
             <FiSettings size={18} />
@@ -149,9 +138,7 @@ export function LeftSidebar() {
             <NavLink
               to="/admin"
               className={({ isActive }) =>
-                `ph-sidebar-link d-flex align-items-center gap-2.5 px-3 py-2.5 rounded-3 text-decoration-none fw-medium text-warning ${
-                  isActive ? "active bg-warning-subtle" : "hover-bg"
-                }`
+                `ph-sidebar-link ph-admin-link ${isActive ? "active" : ""}`
               }
             >
               <FiShield size={18} />
@@ -160,18 +147,19 @@ export function LeftSidebar() {
           )}
         </nav>
 
-        <div className="pt-3 mt-2 border-top">
+        {/* Create Post CTA */}
+        <div className="pt-2.5 mt-1 border-top">
           <Button
             as={Link}
             to="/create-post"
-            variant="primary"
-            className="btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2 py-2 rounded-pill shadow-sm"
+            className="ph-sidebar-create-btn w-100"
+            aria-label="Create a new post"
           >
-            <FiPlusSquare size={16} />
+            <FiPlusSquare size={17} />
             <span>Create Post</span>
           </Button>
         </div>
-      </Card>
+      </div>
     </aside>
   );
 }
@@ -184,37 +172,43 @@ export function RightWidgets() {
   const [trendingTags, setTrendingTags] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [trendingError, setTrendingError] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState(false);
   const [followingMap, setFollowingMap] = useState({});
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadWidgets = async () => {
-      try {
-        const [trendRes, suggRes] = await Promise.allSettled([
-          getTrending(),
-          getSuggestions(4),
-        ]);
+  const loadWidgets = async () => {
+    setLoading(true);
+    setTrendingError(false);
+    setSuggestionsError(false);
 
-        if (isMounted) {
-          if (trendRes.status === "fulfilled" && trendRes.value.data?.data) {
-            const data = trendRes.value.data.data;
-            setTrendingTags(data.trendingHashtags || (Array.isArray(data) ? data : []));
-          }
-          if (suggRes.status === "fulfilled" && suggRes.value.data?.data) {
-            setSuggestions(suggRes.value.data.data || []);
-          }
-        }
-      } catch {
-        // Silently tolerate widget errors
-      } finally {
-        if (isMounted) setLoading(false);
+    try {
+      const [trendRes, suggRes] = await Promise.allSettled([
+        getTrending(),
+        getSuggestions(4),
+      ]);
+
+      if (trendRes.status === "fulfilled" && trendRes.value.data?.data) {
+        const data = trendRes.value.data.data;
+        setTrendingTags(data.trendingHashtags || (Array.isArray(data) ? data : []));
+      } else {
+        setTrendingError(true);
       }
-    };
 
+      if (suggRes.status === "fulfilled" && suggRes.value.data?.data) {
+        setSuggestions(suggRes.value.data.data || []);
+      } else {
+        setSuggestionsError(true);
+      }
+    } catch {
+      setTrendingError(true);
+      setSuggestionsError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadWidgets();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const handleFollowToggle = async (creatorId, creatorName) => {
@@ -236,7 +230,7 @@ export function RightWidgets() {
   };
 
   return (
-    <aside className="ph-right-widgets d-none d-xl-flex flex-column gap-3 sticky-top" style={{ top: "80px" }}>
+    <div className="ph-right-widgets d-flex flex-column gap-3 sticky-top" style={{ top: "80px" }}>
       {/* 1. Trending Hashtags Widget */}
       <Card className="border-0 shadow-sm rounded-4 p-3 bg-card">
         <div className="d-flex align-items-center justify-content-between mb-2.5 pb-2 border-bottom">
@@ -249,13 +243,36 @@ export function RightWidgets() {
         </div>
 
         {loading ? (
+          <div className="d-flex flex-column gap-2 py-1">
+            <div className="skeleton" style={{ height: "24px", width: "75%" }}></div>
+            <div className="skeleton" style={{ height: "24px", width: "90%" }}></div>
+            <div className="skeleton" style={{ height: "24px", width: "65%" }}></div>
+            <div className="skeleton" style={{ height: "24px", width: "80%" }}></div>
+          </div>
+        ) : trendingError ? (
           <div className="py-3 text-center">
-            <Spinner size="sm" animation="border" variant="secondary" />
+            <p className="small text-muted mb-2">Unable to load trending topics.</p>
+            <Button
+              size="sm"
+              variant="outline-primary"
+              className="rounded-pill px-3 py-1 small fw-medium"
+              onClick={loadWidgets}
+            >
+              Retry
+            </Button>
           </div>
         ) : trendingTags.length === 0 ? (
-          <p className="small text-muted mb-0 py-2">No trending hashtags today.</p>
+          <div className="py-3 text-center">
+            <div className="text-muted mb-1 opacity-75">
+              <FiTrendingUp size={22} />
+            </div>
+            <div className="small fw-semibold text-body mb-0.5">No trending topics yet</div>
+            <p className="text-muted mb-0" style={{ fontSize: "11.5px" }}>
+              Popular topics will appear here as the community grows.
+            </p>
+          </div>
         ) : (
-          <div className="d-flex flex-column gap-2">
+          <div className="d-flex flex-column gap-1.5">
             {trendingTags.slice(0, 5).map((item, idx) => {
               const tagName = typeof item === "string" ? item : item.tag || item.name;
               const count = typeof item === "object" ? item.count : null;
@@ -264,7 +281,7 @@ export function RightWidgets() {
                   key={idx}
                   role="button"
                   onClick={() => navigate(`/explore?tag=${encodeURIComponent(tagName)}`)}
-                  className="d-flex align-items-center justify-content-between p-1.5 rounded-2 hover-bg cursor-pointer"
+                  className="ph-trending-item d-flex align-items-center justify-content-between p-1.5 rounded-2 hover-bg cursor-pointer"
                 >
                   <span className="small fw-semibold text-primary">#{tagName}</span>
                   {count && <span className="small text-muted font-monospace">{count} posts</span>}
@@ -285,11 +302,39 @@ export function RightWidgets() {
           </div>
 
           {loading ? (
+            <div className="d-flex flex-column gap-2.5 py-1">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="d-flex align-items-center gap-2">
+                  <div className="skeleton skeleton-avatar" style={{ width: 34, height: 34 }}></div>
+                  <div className="flex-grow-1">
+                    <div className="skeleton mb-1" style={{ height: 12, width: "65%" }}></div>
+                    <div className="skeleton" style={{ height: 10, width: "40%" }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : suggestionsError ? (
             <div className="py-3 text-center">
-              <Spinner size="sm" animation="border" variant="secondary" />
+              <p className="small text-muted mb-2">Unable to load recommendations.</p>
+              <Button
+                size="sm"
+                variant="outline-primary"
+                className="rounded-pill px-3 py-1 small fw-medium"
+                onClick={loadWidgets}
+              >
+                Retry
+              </Button>
             </div>
           ) : suggestions.length === 0 ? (
-            <p className="small text-muted mb-0 py-2">No recommendations right now.</p>
+            <div className="py-3 text-center">
+              <div className="text-muted mb-1 opacity-75">
+                <FiUsers size={22} />
+              </div>
+              <div className="small fw-semibold text-body mb-0.5">No recommendations right now</div>
+              <p className="text-muted mb-0" style={{ fontSize: "11.5px" }}>
+                New creators will appear here as members join PostHub.
+              </p>
+            </div>
           ) : (
             <div className="d-flex flex-column gap-2.5">
               {suggestions.map((creator) => {
@@ -329,13 +374,11 @@ export function RightWidgets() {
                       variant={isFollowing ? "outline-secondary" : "outline-primary"}
                       size="sm"
                       onClick={() => handleFollowToggle(creator._id, creator.name)}
-                      className="rounded-pill px-2.5 py-0.5 small d-flex align-items-center gap-1 flex-shrink-0"
+                      className={`ph-follow-btn rounded-pill px-2.5 py-0.5 small d-flex align-items-center gap-1 flex-shrink-0 ${isFollowing ? "is-following" : ""}`}
                       style={{ fontSize: "12px" }}
                     >
                       {isFollowing ? (
-                        <>
-                          <FiUserCheck size={12} />
-                        </>
+                        <FiUserCheck size={12} />
                       ) : (
                         <>
                           <FiUserPlus size={12} /> Follow
@@ -350,20 +393,36 @@ export function RightWidgets() {
         </Card>
       )}
 
-      {/* 3. Community Highlights Card */}
+      {/* 3. Community Highlights & Guidelines Card */}
       <Card className="border-0 shadow-sm rounded-4 p-3 bg-card">
-        <h6 className="fw-bold mb-1.5 d-flex align-items-center gap-1.5 fs-6 text-body">
-          <FiActivity className="text-info" /> Community Telemetry
+        <h6 className="fw-bold mb-2 d-flex align-items-center gap-1.5 fs-6 text-body">
+          <FiShield className="text-primary" /> Community Guidelines
         </h6>
-        <p className="text-muted small mb-2" style={{ fontSize: "12px" }}>
-          Explore deterministic rankings, real-time hashtag trends, and creator analytics on PostHub 3.0.
-        </p>
-        <div className="d-flex flex-wrap gap-1">
-          <Badge bg="light" text="dark" className="border small">#DeterministicRanking</Badge>
-          <Badge bg="light" text="dark" className="border small">#ExplainableAI</Badge>
-          <Badge bg="light" text="dark" className="border small">#MongoDBAtlas</Badge>
+        <div className="small text-muted d-flex flex-column gap-1.5 mb-2.5" style={{ fontSize: "12px" }}>
+          <div className="d-flex align-items-baseline gap-1.5">
+            <span className="text-primary fw-bold">•</span>
+            <span>Be respectful, inclusive, and constructive</span>
+          </div>
+          <div className="d-flex align-items-baseline gap-1.5">
+            <span className="text-primary fw-bold">•</span>
+            <span>Share original work, ideas, and insights</span>
+          </div>
+          <div className="d-flex align-items-baseline gap-1.5">
+            <span className="text-primary fw-bold">•</span>
+            <span>Avoid spam, misleading claims, and self-promotion</span>
+          </div>
+          <div className="d-flex align-items-baseline gap-1.5">
+            <span className="text-primary fw-bold">•</span>
+            <span>Support fellow creators with thoughtful feedback</span>
+          </div>
+        </div>
+        <div className="pt-2 border-top d-flex align-items-center justify-content-between">
+          <span className="text-muted" style={{ fontSize: "11px" }}>PostHub Social</span>
+          <Link to="/explore" className="small text-decoration-none text-primary fw-medium" style={{ fontSize: "11px" }}>
+            Explore Hub →
+          </Link>
         </div>
       </Card>
-    </aside>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Container, Button, Badge } from "react-bootstrap";
+import { Container, Button, Spinner } from "react-bootstrap";
 import { 
   FiBell, 
   FiHeart, 
@@ -10,26 +10,32 @@ import {
   FiAtSign, 
   FiBookmark, 
   FiCheck,
-  FiCheckCircle 
+  FiCheckCircle,
+  FiAlertCircle
 } from "react-icons/fi";
 import { getNotifications, markAsRead, markAllAsRead } from "../services/notifications";
 import { formatTimeAgo } from "../utils/timeAgo";
 import { useToast } from "../context/ToastContext";
 import NotificationSkeleton from "../components/NotificationSkeleton";
 import EmptyState from "../components/EmptyState";
+import PageHeader from "../components/PageHeader";
 
 export default function Notifications() {
   const { showToast } = useToast();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
+  const [filterTab, setFilterTab] = useState("all");
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const res = await getNotifications({ page: 1, limit: 50 });
       setNotifications(res.data?.data?.notifications || []);
     } catch {
+      setError(true);
       showToast("Failed to load notifications.", "danger");
     } finally {
       setLoading(false);
@@ -47,7 +53,7 @@ export default function Notifications() {
         prev.map((n) => (n._id === id ? { ...n, read: true } : n))
       );
     } catch {
-      // Ignore
+      // Silently ignore
     }
   };
 
@@ -67,21 +73,31 @@ export default function Notifications() {
   const getIconForType = (type) => {
     switch (type) {
       case "LIKE":
-        return <FiHeart className="text-danger" size={16} />;
+        return <FiHeart className="text-danger" size={15} />;
       case "COMMENT":
-        return <FiMessageSquare className="text-primary" size={16} />;
+        return <FiMessageSquare className="text-primary" size={15} />;
       case "REPLY":
-        return <FiCornerDownRight className="text-info" size={16} />;
+        return <FiCornerDownRight className="text-info" size={15} />;
       case "FOLLOW":
-        return <FiUserPlus className="text-success" size={16} />;
+        return <FiUserPlus className="text-success" size={15} />;
       case "MENTION":
-        return <FiAtSign className="text-warning" size={16} />;
+        return <FiAtSign className="text-warning" size={15} />;
       case "SAVE":
-        return <FiBookmark className="text-warning" size={16} />;
+        return <FiBookmark className="text-primary" size={15} />;
       default:
-        return <FiBell className="text-secondary" size={16} />;
+        return <FiBell className="text-secondary" size={15} />;
     }
   };
+
+  // Local filter
+  const filteredNotifications = useMemo(() => {
+    if (filterTab === "all") return notifications;
+    if (filterTab === "likes") return notifications.filter((n) => n.type === "LIKE");
+    if (filterTab === "comments") return notifications.filter((n) => ["COMMENT", "REPLY"].includes(n.type));
+    if (filterTab === "follows") return notifications.filter((n) => n.type === "FOLLOW");
+    if (filterTab === "mentions") return notifications.filter((n) => n.type === "MENTION");
+    return notifications;
+  }, [notifications, filterTab]);
 
   // Group notifications into Today, Yesterday, and Earlier
   const groupedNotifications = useMemo(() => {
@@ -93,7 +109,7 @@ export default function Notifications() {
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
 
-    notifications.forEach((item) => {
+    filteredNotifications.forEach((item) => {
       const itemDate = new Date(item.createdAt);
       if (itemDate >= startOfToday) {
         today.push(item);
@@ -109,7 +125,7 @@ export default function Notifications() {
       { label: "Yesterday", items: yesterday },
       { label: "Earlier", items: earlier },
     ].filter((group) => group.items.length > 0);
-  }, [notifications]);
+  }, [filteredNotifications]);
 
   const hasUnread = notifications.some((n) => !n.read);
 
@@ -121,17 +137,17 @@ export default function Notifications() {
       <div
         key={n._id}
         className={`list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between gap-3 border-0 border-bottom notification-item-animate ${
-          !n.read ? "bg-primary-subtle" : ""
+          !n.read ? "notification-item-unread" : ""
         }`}
         onClick={() => !n.read && handleMarkAsRead(n._id)}
-        style={{ cursor: "pointer", transition: "background-color 0.2s ease" }}
+        style={{ cursor: "pointer", transition: "background-color 150ms ease" }}
       >
         <div className="d-flex align-items-center gap-3">
-          <div className="notification-icon-wrapper rounded-circle p-2 bg-body d-flex align-items-center justify-content-center shadow-sm">
+          <div className="notification-icon-wrapper rounded-circle p-2 bg-body d-flex align-items-center justify-content-center shadow-sm flex-shrink-0">
             {getIconForType(n.type)}
           </div>
 
-          <Link to={`/profile/${actor.username}`} className="text-decoration-none" onClick={(e) => e.stopPropagation()}>
+          <Link to={`/profile/${actor.username}`} className="text-decoration-none flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             {actor.avatar ? (
               <img
                 src={actor.avatar}
@@ -141,7 +157,7 @@ export default function Notifications() {
               />
             ) : (
               <div
-                className="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small"
+                className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold small"
                 style={{ width: 40, height: 40 }}
               >
                 {(actor.name || "U")[0].toUpperCase()}
@@ -176,48 +192,115 @@ export default function Notifications() {
         </div>
 
         {!n.read && (
-          <Badge bg="primary" pill className="p-1" title="Unread">
-            {" "}
-          </Badge>
+          <span
+            className="d-inline-block rounded-circle bg-primary flex-shrink-0"
+            style={{ width: 8, height: 8 }}
+            title="Unread"
+          />
         )}
       </div>
     );
   };
 
   return (
-    <main className="notifications-page py-4">
-      <Container style={{ maxWidth: "680px" }}>
-        <div className="d-flex align-items-center justify-content-between mb-4">
-          <div>
-            <h4 className="fw-bold mb-0 d-flex align-items-center gap-2">
-              <FiBell /> Notifications
-            </h4>
-            <span className="text-muted small">Stay updated on your content and network</span>
-          </div>
-
+    <main className="notifications-page py-4 page-enter-animate">
+      <Container style={{ maxWidth: "700px" }}>
+        {/* Page Header */}
+        <PageHeader
+          title="Notifications"
+          description="Stay updated with activity around your posts and profile."
+        >
           {hasUnread && (
             <Button
               variant="outline-primary"
               size="sm"
               onClick={handleMarkAllAsRead}
               disabled={markingAll}
-              className="d-flex align-items-center gap-1 rounded-pill px-3"
+              className="d-flex align-items-center gap-1.5 rounded-pill px-3 py-1 small fw-medium"
             >
-              <FiCheck /> Mark all as read
+              {markingAll ? <Spinner size="sm" animation="border" /> : <><FiCheck size={14} /> <span>Mark all as read</span></>}
             </Button>
           )}
+        </PageHeader>
+
+        {/* Notification Filter Chips */}
+        <div className="feed-tabs-container mb-3">
+          <div className="feed-tabs-scroll" role="tablist" aria-label="Notification filters">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterTab === "all"}
+              className={`feed-tab-btn ${filterTab === "all" ? "active" : ""}`}
+              onClick={() => setFilterTab("all")}
+            >
+              <span>All</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterTab === "likes"}
+              className={`feed-tab-btn ${filterTab === "likes" ? "active" : ""}`}
+              onClick={() => setFilterTab("likes")}
+            >
+              <FiHeart size={14} /> <span>Likes</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterTab === "comments"}
+              className={`feed-tab-btn ${filterTab === "comments" ? "active" : ""}`}
+              onClick={() => setFilterTab("comments")}
+            >
+              <FiMessageSquare size={14} /> <span>Comments</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterTab === "follows"}
+              className={`feed-tab-btn ${filterTab === "follows" ? "active" : ""}`}
+              onClick={() => setFilterTab("follows")}
+            >
+              <FiUserPlus size={14} /> <span>Follows</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterTab === "mentions"}
+              className={`feed-tab-btn ${filterTab === "mentions" ? "active" : ""}`}
+              onClick={() => setFilterTab("mentions")}
+            >
+              <FiAtSign size={14} /> <span>Mentions</span>
+            </button>
+          </div>
         </div>
 
-        {loading ? (
-          <div>
+        {error ? (
+          <div className="text-center py-5 px-3 rounded-4 bg-card border shadow-sm">
+            <div className="text-danger mb-2">
+              <FiAlertCircle size={36} />
+            </div>
+            <h5 className="fw-bold mb-1 text-body">Couldn't load notifications</h5>
+            <p className="text-muted small mb-3">Something went wrong. Please check your connection and try again.</p>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              className="rounded-pill px-4"
+              onClick={fetchNotifications}
+            >
+              Try Again
+            </Button>
+          </div>
+        ) : loading ? (
+          <div className="d-flex flex-column gap-3">
             <NotificationSkeleton />
             <NotificationSkeleton />
             <NotificationSkeleton />
           </div>
-        ) : notifications.length === 0 ? (
+        ) : filteredNotifications.length === 0 ? (
           <EmptyState
-            title="All caught up!"
-            message="You don't have any notifications right now. When someone interacts with your posts, you will see it here."
+            icon={<FiBell size={36} className="text-primary" />}
+            title="You're all caught up"
+            message="New activity around your posts and network will appear here."
             actionText="Browse Feed"
             actionLink="/dashboard"
           />
@@ -226,7 +309,7 @@ export default function Notifications() {
             {groupedNotifications.map((group) => (
               <div key={group.label} className="notification-group">
                 <div className="d-flex align-items-center justify-content-between px-2 mb-2">
-                  <h6 className="fw-bold text-muted text-uppercase mb-0" style={{ fontSize: "12px", letterSpacing: "0.5px" }}>
+                  <h6 className="fw-bold text-muted text-uppercase mb-0" style={{ fontSize: "11.5px", letterSpacing: "0.5px" }}>
                     {group.label}
                   </h6>
                   <span className="badge bg-secondary-subtle text-secondary small rounded-pill">

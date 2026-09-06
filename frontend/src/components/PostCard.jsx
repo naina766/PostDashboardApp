@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Form, Button, Spinner, Badge, Modal, ProgressBar } from "react-bootstrap";
+import { Form, Button, Spinner, Badge, Modal, ProgressBar, Dropdown } from "react-bootstrap";
 import { 
   FiHeart, 
   FiMessageCircle, 
@@ -15,7 +15,8 @@ import {
   FiCheckCircle,
   FiCornerDownRight,
   FiExternalLink,
-  FiTrendingUp
+  FiTrendingUp,
+  FiMoreHorizontal
 } from "react-icons/fi";
 import { formatTimeAgo } from "../utils/timeAgo";
 import { 
@@ -31,7 +32,7 @@ import { useToast } from "../context/ToastContext";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import ReportModal from "./ReportModal";
 
-export default function PostCard({ post, currentUser, onDeletePost }) {
+export default function PostCard({ post, currentUser, onDeletePost, onSaveToggle }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -84,6 +85,9 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
   // Content truncation state
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Double click like animation state
+  const [showDoubleLikeHeart, setShowDoubleLikeHeart] = useState(false);
+
   // Check ownership or admin
   const postUserId = typeof post.user === "object" ? post.user?._id : post.user;
   const currentUserId = currentUser?._id;
@@ -123,6 +127,16 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
     }
   };
 
+  const handleDoubleClick = (e) => {
+    // Avoid double clicking on buttons, links, or inputs
+    if (e.target.closest("button, a, input, textarea, select")) return;
+    if (!liked && !likePending) {
+      handleLikeToggle();
+    }
+    setShowDoubleLikeHeart(true);
+    setTimeout(() => setShowDoubleLikeHeart(false), 650);
+  };
+
   // Bookmark / Save Handler
   const handleSaveToggle = async () => {
     if (!currentUser) {
@@ -140,8 +154,12 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
     try {
       const res = await toggleSave(post._id);
       if (res.data?.data) {
-        setSaved(res.data.data.saved);
-        showToast(res.data.data.saved ? "Saved to your bookmarks" : "Removed from bookmarks", "info", 2000);
+        const newSaved = res.data.data.saved;
+        setSaved(newSaved);
+        showToast(newSaved ? "Saved to your bookmarks" : "Removed from bookmarks", "info", 2000);
+        if (onSaveToggle) {
+          onSaveToggle(post._id, newSaved);
+        }
       }
     } catch (err) {
       setSaved(prevSaved);
@@ -310,7 +328,14 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
   const allMedia = post.media && post.media.length > 0 ? post.media : post.image ? [{ url: post.image }] : [];
 
   return (
-    <article className="post-card" id={post._id}>
+    <article className="post-card position-relative" id={post._id} onDoubleClick={handleDoubleClick}>
+      {/* Double click floating heart animation */}
+      {showDoubleLikeHeart && (
+        <div className="double-click-heart-overlay">
+          <FiHeart size={68} style={{ fill: "currentColor" }} />
+        </div>
+      )}
+
       {/* Explainable Discovery Header Pill */}
       {post.discoveryReason && (
         <div className="d-flex align-items-center gap-1.5 px-3 pt-3 pb-0 text-muted small">
@@ -358,45 +383,62 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
           </div>
         </div>
 
-        {/* Action Dropdown / Controls */}
-        <div className="d-flex align-items-center gap-1">
-          {isOwner && (
-            <Button
-              variant="outline-primary"
-              size="sm"
-              className="d-flex align-items-center gap-1 py-1 px-2 border-0"
-              onClick={() => navigate(`/edit-post/${post._id}`)}
-              title="Edit post"
-              aria-label="Edit post"
-            >
-              <FiEdit size={14} /> <span className="d-none d-sm-inline">Edit</span>
-            </Button>
-          )}
-
-          {(isOwner || isAdminOrMod) && (
-            <Button
-              variant="outline-danger"
-              size="sm"
-              className="d-flex align-items-center gap-1 py-1 px-2 border-0"
-              onClick={() => setShowDeleteModal(true)}
-              title="Delete post"
-              aria-label="Delete post"
-            >
-              <FiTrash2 size={14} /> <span className="d-none d-sm-inline">Delete</span>
-            </Button>
-          )}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted p-1 border-0"
-            onClick={() => setShowReportModal(true)}
-            title="Report post"
-            aria-label="Report post"
+        {/* Post Options Dropdown Menu (⋯) */}
+        <Dropdown align="end">
+          <Dropdown.Toggle
+            as="button"
+            className="ph-post-more-btn border-0 text-muted p-1 rounded-circle d-flex align-items-center justify-content-center"
+            aria-label="Post options"
+            title="More options"
           >
-            <FiFlag size={14} />
-          </Button>
-        </div>
+            <FiMoreHorizontal size={18} />
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu className="ph-post-dropdown-menu shadow-sm border py-1">
+            {isOwner && (
+              <Dropdown.Item
+                onClick={() => navigate(`/edit-post/${post._id}`)}
+                className="d-flex align-items-center gap-2 small py-2 px-3 text-body"
+              >
+                <FiEdit size={14} className="text-primary" />
+                <span>Edit Post</span>
+              </Dropdown.Item>
+            )}
+
+            {!isOwner && (
+              <Dropdown.Item
+                onClick={handleSaveToggle}
+                className="d-flex align-items-center gap-2 small py-2 px-3 text-body"
+              >
+                <FiBookmark size={14} className={saved ? "text-primary" : "text-muted"} />
+                <span>{saved ? "Remove Bookmark" : "Bookmark Post"}</span>
+              </Dropdown.Item>
+            )}
+
+            {!isOwner && (
+              <Dropdown.Item
+                onClick={() => setShowReportModal(true)}
+                className="d-flex align-items-center gap-2 small py-2 px-3 text-body"
+              >
+                <FiFlag size={14} className="text-warning" />
+                <span>Report Post</span>
+              </Dropdown.Item>
+            )}
+
+            {(isOwner || isAdminOrMod) && (
+              <>
+                <Dropdown.Divider className="my-1" />
+                <Dropdown.Item
+                  onClick={() => setShowDeleteModal(true)}
+                  className="d-flex align-items-center gap-2 small py-2 px-3 text-danger"
+                >
+                  <FiTrash2 size={14} />
+                  <span>Delete Post</span>
+                </Dropdown.Item>
+              </>
+            )}
+          </Dropdown.Menu>
+        </Dropdown>
       </div>
 
       {/* Body */}
@@ -534,6 +576,7 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
             onClick={handleLikeToggle}
             disabled={likePending}
             title={liked ? "Unlike post" : "Like post"}
+            aria-label={liked ? "Unlike post" : "Like post"}
           >
             <FiHeart style={{ fill: liked ? "currentColor" : "none" }} />
             <span>{likesCount}</span>
@@ -545,6 +588,7 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
             className="post-action-btn"
             onClick={() => setShowComments(!showComments)}
             title="Comments"
+            aria-label="Toggle comments"
           >
             <FiMessageCircle />
             <span>{comments.length}</span>
@@ -553,10 +597,11 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
           {/* Save / Bookmark */}
           <button
             type="button"
-            className={`post-action-btn ${saved ? "text-warning" : ""} ${animateBookmark ? "bookmark-pop" : ""}`}
+            className={`post-action-btn ${saved ? "saved" : ""} ${animateBookmark ? "bookmark-pop" : ""}`}
             onClick={handleSaveToggle}
             disabled={savePending}
             title={saved ? "Remove bookmark" : "Save post"}
+            aria-label={saved ? "Remove bookmark" : "Bookmark post"}
           >
             <FiBookmark style={{ fill: saved ? "currentColor" : "none" }} />
           </button>
@@ -567,6 +612,7 @@ export default function PostCard({ post, currentUser, onDeletePost }) {
             className="post-action-btn"
             onClick={handleShare}
             title="Share post"
+            aria-label="Share post"
           >
             <FiShare2 />
           </button>

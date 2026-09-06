@@ -18,6 +18,7 @@ const SavedPosts = lazy(() => import("./pages/SavedPosts"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Landing = lazy(() => import("./pages/Landing"));
 
 import { UserProvider } from "./context/UserContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -55,6 +56,7 @@ function App() {
                 <Suspense fallback={<RouteLoadingScreen />}>
                   <Routes>
                     {/* Public Routes */}
+                    <Route path="/" element={<Landing />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
 
@@ -70,12 +72,12 @@ function App() {
                       <Route path="/saved" element={<SavedPosts />} />
                       <Route path="/analytics" element={<Analytics />} />
                       <Route path="/creator" element={<Analytics />} />
+                      <Route path="/creator-analytics" element={<Analytics />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/settings" element={<Settings />} />
                     </Route>
 
-                    {/* Root & Fallback redirect to dashboard */}
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    {/* Fallback redirect to dashboard */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Suspense>

@@ -1,26 +1,32 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Container, Button, Spinner } from "react-bootstrap";
-import { FiBookmark, FiRefreshCw } from "react-icons/fi";
+import { FiBookmark, FiRefreshCw, FiAlertCircle } from "react-icons/fi";
 import { getSavedPosts } from "../services/posts";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import PostCard from "../components/PostCard";
 import PostSkeleton from "../components/PostSkeleton";
 import EmptyState from "../components/EmptyState";
+import PageHeader from "../components/PageHeader";
 
 export default function SavedPosts() {
   const { user } = useUser();
   const { showToast } = useToast();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ page: 1, hasNextPage: false, total: 0 });
   const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchSaved = useCallback(
     async (pageNum = 1, isLoadMore = false) => {
-      if (isLoadMore) setLoadingMore(true);
-      else setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+        setError(false);
+      }
 
       try {
         const res = await getSavedPosts({ page: pageNum, limit: 10 });
@@ -35,6 +41,9 @@ export default function SavedPosts() {
           setPage(pageNum);
         }
       } catch {
+        if (!isLoadMore) {
+          setError(true);
+        }
         showToast("Failed to load saved posts.", "danger");
       } finally {
         setLoading(false);
@@ -50,50 +59,72 @@ export default function SavedPosts() {
 
   const handleRemovePost = (postId) => {
     setPosts((prev) => prev.filter((p) => p._id !== postId));
+    setPagination((prev) => ({
+      ...prev,
+      total: Math.max(0, prev.total - 1),
+    }));
   };
 
   return (
-    <main className="saved-posts-page py-4">
-      <Container style={{ maxWidth: "720px" }}>
-        <div className="mb-4">
-          <h4 className="fw-bold mb-1 d-flex align-items-center gap-2">
-            <FiBookmark className="text-warning" /> Saved Posts
-          </h4>
-          <p className="text-muted small mb-0">
-            {posts.length > 0 ? `You have saved ${pagination.total} posts` : "Your personal bookmark collection"}
-          </p>
-        </div>
+    <main className="saved-posts-page py-4 page-enter-animate">
+      <Container style={{ maxWidth: "700px" }}>
+        {/* Page Header */}
+        <PageHeader
+          title="Saved Posts"
+          description="Keep the conversations and ideas you want to revisit."
+        />
 
-        {loading ? (
-          <div>
+        {error ? (
+          <div className="text-center py-5 px-3 rounded-4 bg-card border shadow-sm">
+            <div className="text-danger mb-2">
+              <FiAlertCircle size={36} />
+            </div>
+            <h5 className="fw-bold mb-1 text-body">Couldn't load saved posts</h5>
+            <p className="text-muted small mb-3">Something went wrong. Please check your connection and try again.</p>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              className="rounded-pill px-4"
+              onClick={() => fetchSaved(1, false)}
+            >
+              Try Again
+            </Button>
+          </div>
+        ) : loading ? (
+          <div className="d-flex flex-column gap-3">
+            <PostSkeleton />
             <PostSkeleton />
             <PostSkeleton />
           </div>
         ) : posts.length === 0 ? (
           <EmptyState
-            title="No saved posts yet"
-            description="Whenever you see a post you'd like to revisit later, click the bookmark icon to save it here."
-            actionText="Explore Feed"
-            actionLink="/dashboard"
+            icon={<FiBookmark size={36} className="text-primary" />}
+            title="Nothing saved yet"
+            message="Save posts you want to revisit later by clicking the bookmark icon on any post."
+            actionText="Explore Posts"
+            actionLink="/explore"
           />
         ) : (
-          <div>
+          <div className="d-flex flex-column gap-3">
             {posts.map((post) => (
               <PostCard
                 key={post._id}
                 post={post}
                 currentUser={user}
                 onDeletePost={handleRemovePost}
+                onSaveToggle={(postId, isSaved) => {
+                  if (!isSaved) handleRemovePost(postId);
+                }}
               />
             ))}
 
             {pagination.hasNextPage && (
-              <div className="text-center mt-4">
+              <div className="text-center mt-2 py-3">
                 <Button
                   variant="outline-primary"
                   onClick={() => fetchSaved(page + 1, true)}
                   disabled={loadingMore}
-                  className="px-4 py-2"
+                  className="px-4 py-1.5 rounded-pill small fw-medium"
                 >
                   {loadingMore ? (
                     <>
@@ -101,7 +132,7 @@ export default function SavedPosts() {
                     </>
                   ) : (
                     <>
-                      <FiRefreshCw className="me-2" /> Load More Saved Posts
+                      <FiRefreshCw className="me-2" /> Load More Saved Posts ({posts.length} of {pagination.total})
                     </>
                   )}
                 </Button>

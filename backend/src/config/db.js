@@ -1,26 +1,39 @@
 import mongoose from "mongoose";
 import dns from "dns";
-
-// Resolve SRV records if Node resolver on Windows defaults solely to localhost loopback
-try {
-  const currentDns = dns.getServers();
-  if (currentDns.length === 1 && currentDns[0] === "127.0.0.1") {
-    dns.setServers(["8.8.8.8", "1.1.1.1"]);
-  }
-} catch {
-  // Fallback gracefully
-}
+import User from "../modules/auth/auth.model.js";
 
 /**
  * Production-ready MongoDB Connection Manager
  * Includes pool controls, timeout resilience, reconnection telemetry, and graceful shutdown.
  */
 const connectDB = async () => {
+  // Environment-driven DNS resolution fallback for environments requiring custom resolvers (e.g., local Windows stubs)
+  try {
+    if (process.env.DNS_SERVERS) {
+      const servers = process.env.DNS_SERVERS.split(",").map((s) => s.trim()).filter(Boolean);
+      if (servers.length > 0) {
+        dns.setServers(servers);
+      }
+    } else if (process.env.DNS_FALLBACK === "true") {
+      const currentDns = dns.getServers();
+      if (currentDns.length === 1 && currentDns[0] === "127.0.0.1") {
+        dns.setServers(["8.8.8.8", "1.1.1.1"]);
+      }
+    }
+  } catch {
+    // Fallback gracefully
+  }
+
   const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 
   if (!mongoUri) {
     console.error("❌ Fatal: MONGODB_URI or MONGO_URI environment variable is not defined.");
     process.exit(1);
+  }
+
+  // Prevent multiple connection instances during development hot-reloading
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
   }
 
   const options = {
@@ -34,6 +47,8 @@ const connectDB = async () => {
   try {
     const conn = await mongoose.connect(mongoUri, options);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
+    // Non-blocking index synchronization during startup
+    User.createIndexes().catch(() => {});
   } catch (err) {
     console.error(`❌ MongoDB Initial Connection Error: ${err.message}`);
     process.exit(1);

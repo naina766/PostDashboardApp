@@ -41,6 +41,7 @@ import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import PostCard from "../components/PostCard";
 import ProfileSkeleton from "../components/ProfileSkeleton";
+import PostSkeleton from "../components/PostSkeleton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 
@@ -556,62 +557,68 @@ export default function Profile() {
         </div>
 
         {/* Profile Content Tabs */}
-        <Nav variant="underline" className="feed-nav-tabs mb-4">
-          <Nav.Item>
-            <Nav.Link
-              active={activeTab === "posts"}
+        <div className="feed-tabs-container mb-4">
+          <div className="feed-tabs-scroll" role="tablist" aria-label="Profile content tabs">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "posts"}
+              className={`feed-tab-btn ${activeTab === "posts" ? "active" : ""}`}
               onClick={() => setActiveTab("posts")}
-              className="d-flex align-items-center gap-1.5 cursor-pointer py-2 px-3 fw-semibold"
             >
-              <FiFileText /> Posts
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link
-              active={activeTab === "media"}
+              <FiFileText size={15} /> <span>Posts</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "media"}
+              className={`feed-tab-btn ${activeTab === "media" ? "active" : ""}`}
               onClick={() => setActiveTab("media")}
-              className="d-flex align-items-center gap-1.5 cursor-pointer py-2 px-3 fw-semibold"
             >
-              <FiImage /> Media
-            </Nav.Link>
-          </Nav.Item>
-          {isOwnProfile && (
-            <Nav.Item>
-              <Nav.Link
-                active={activeTab === "saved"}
+              <FiImage size={15} /> <span>Media</span>
+            </button>
+            {isOwnProfile && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "saved"}
+                className={`feed-tab-btn ${activeTab === "saved" ? "active" : ""}`}
                 onClick={() => setActiveTab("saved")}
-                className="d-flex align-items-center gap-1.5 cursor-pointer py-2 px-3 fw-semibold"
               >
-                <FiBookmark /> Saved
-              </Nav.Link>
-            </Nav.Item>
-          )}
-          {isOwnProfile && (
-            <Nav.Item>
-              <Nav.Link
+                <FiBookmark size={15} /> <span>Saved</span>
+              </button>
+            )}
+            {isOwnProfile && (
+              <button
+                type="button"
+                className="feed-tab-btn"
                 onClick={() => navigate("/creator")}
-                className="d-flex align-items-center gap-1.5 cursor-pointer py-2 px-3 fw-semibold"
               >
-                <FiBarChart2 /> Analytics
-              </Nav.Link>
-            </Nav.Item>
-          )}
-        </Nav>
+                <FiBarChart2 size={15} /> <span>Analytics</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Tab Content */}
         {postsLoading ? (
-          <LoadingSpinner message="Loading content..." />
+          <div className="d-flex flex-column gap-3">
+            <PostSkeleton />
+            <PostSkeleton />
+          </div>
         ) : userPosts.length === 0 ? (
           <EmptyState
             title={`No ${activeTab} yet`}
-            description={
+            message={
               isOwnProfile
                 ? "You haven't shared anything in this category yet."
                 : `@${profile.username} has not posted any ${activeTab} yet.`
             }
+            actionText={isOwnProfile && activeTab === "posts" ? "Create Post" : undefined}
+            actionLink={isOwnProfile && activeTab === "posts" ? "/create-post" : undefined}
           />
         ) : (
-          <div>
+          <div className="d-flex flex-column gap-3">
             {userPosts.map((post) => (
               <PostCard
                 key={post._id}

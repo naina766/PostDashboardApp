@@ -41,6 +41,7 @@ export const generateTokens = async (user, ipAddress = "", userAgent = "") => {
 };
 
 export const registerUser = async ({ name, email, password, username }) => {
+  const t0 = performance.now();
   if (!name || !email || !password) throw new ApiError(400, "All fields required");
   validatePassword(password);
 
@@ -56,25 +57,50 @@ export const registerUser = async ({ name, email, password, username }) => {
     const base = name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 15) || "user";
     cleanUsername = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
   }
+  const tValidation = performance.now();
 
   // Concurrently run email lookup, username lookup, and bcrypt hashing in parallel
+  const tLookupBcryptStart = performance.now();
   const [existingEmail, existingUser, hashedPassword] = await Promise.all([
-    User.findOne({ email: cleanEmail }),
-    User.findOne({ username: cleanUsername }),
+    User.findOne({ email: cleanEmail }).lean(),
+    User.findOne({ username: cleanUsername }).lean(),
     bcrypt.hash(password, 10),
   ]);
+  const tLookupBcryptEnd = performance.now();
 
   if (existingEmail) throw new ApiError(400, "Email already exists");
   if (existingUser) {
+    if (username && username.trim()) {
+      throw new ApiError(400, "Username is already taken");
+    }
     cleanUsername = `${cleanUsername.slice(0, 10)}${Date.now().toString().slice(-4)}`;
   }
 
-  const user = await User.create({
-    name: name.trim(),
-    email: cleanEmail,
-    username: cleanUsername,
-    password: hashedPassword,
-  });
+  const tCreateStart = performance.now();
+  let user;
+  try {
+    user = await User.create({
+      name: name.trim(),
+      email: cleanEmail,
+      username: cleanUsername,
+      password: hashedPassword,
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      if (err.keyPattern?.email) throw new ApiError(400, "Email already exists");
+      if (err.keyPattern?.username) throw new ApiError(400, "Username is already taken");
+    }
+    throw err;
+  }
+  const tCreateEnd = performance.now();
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[REGISTER PERF]`);
+    console.log(`  validation: ${(tValidation - t0).toFixed(2)} ms`);
+    console.log(`  parallel lookups & bcrypt: ${(tLookupBcryptEnd - tLookupBcryptStart).toFixed(2)} ms`);
+    console.log(`  create: ${(tCreateEnd - tCreateStart).toFixed(2)} ms`);
+    console.log(`  total: ${(performance.now() - t0).toFixed(2)} ms`);
+  }
 
   return {
     _id: user._id,

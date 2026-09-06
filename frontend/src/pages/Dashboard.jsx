@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
-import { Container, Form, InputGroup, Button, Spinner, Nav } from "react-bootstrap";
+import { Form, Button, Spinner } from "react-bootstrap";
 import { 
   FiSearch, 
-  FiPlusSquare, 
   FiFilter, 
   FiRefreshCw, 
   FiCheckCircle, 
@@ -11,15 +9,13 @@ import {
   FiUsers, 
   FiClock, 
   FiCompass,
-  FiImage,
-  FiPieChart,
-  FiLink,
-  FiFileText
+  FiAlertCircle
 } from "react-icons/fi";
 import { getPosts, deletePost as deletePostApi } from "../services/posts";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import PostCard from "../components/PostCard";
+import Composer from "../components/Composer";
 import PostSkeleton from "../components/PostSkeleton";
 import EmptyState from "../components/EmptyState";
 import { LeftSidebar, RightWidgets } from "../components/Sidebar";
@@ -27,10 +23,12 @@ import { LeftSidebar, RightWidgets } from "../components/Sidebar";
 export default function Dashboard() {
   const { user } = useUser();
   const { showToast } = useToast();
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [feedError, setFeedError] = useState(false);
 
   // Tabs: "forYou", "following", "trending", "latest"
   const [feedTab, setFeedTab] = useState("forYou");
@@ -47,6 +45,11 @@ export default function Dashboard() {
 
   const searchTimeoutRef = useRef(null);
 
+  const handlePostCreated = (newPost) => {
+    setPosts((prev) => [newPost, ...prev]);
+    setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
+  };
+
   const fetchFeed = useCallback(
     async (
       pageNum = 1,
@@ -59,6 +62,7 @@ export default function Dashboard() {
         setLoadingMore(true);
       } else {
         setLoading(true);
+        setFeedError(false);
       }
 
       try {
@@ -81,6 +85,9 @@ export default function Dashboard() {
           setPage(pageNum);
         }
       } catch (err) {
+        if (!isLoadMore) {
+          setFeedError(true);
+        }
         showToast(
           err.response?.data?.message || "Failed to load posts. Please check your connection.",
           "danger"
@@ -131,143 +138,81 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="py-4">
-      <Container fluid="xl">
-        <div className="row g-4 justify-content-center">
+    <main className="dashboard-page py-3 py-md-4 page-enter-animate">
+      <div className="dashboard-container">
+        <div className="dashboard-layout-grid">
           {/* Left Column: Navigation Sidebar (Desktop >= lg) */}
-          <div className="col-lg-3 d-none d-lg-block">
+          <aside className="d-none d-lg-block">
             <LeftSidebar />
-          </div>
+          </aside>
 
-          {/* Center Column: Feed Stream */}
-          <div className="col-12 col-lg-9 col-xl-6">
-            {/* Quick composer prompt */}
-            <div className="composer-card mb-4">
-              <div className="d-flex align-items-center gap-3 mb-3">
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="post-author-avatar rounded-circle object-fit-cover"
-                    style={{ width: 42, height: 42 }}
-                  />
-                ) : (
-                  <div className="post-author-avatar" style={{ width: 42, height: 42 }} aria-hidden="true">
-                    {(user?.name || "U").charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <Link
-                  to="/create-post"
-                  className="flex-grow-1 text-decoration-none"
-                  aria-label="Create a post"
-                >
-                  <div className="form-control bg-body-tertiary text-muted py-2 px-3 rounded-pill border-0 text-start" style={{ cursor: "pointer" }}>
-                    What's on your mind, {user?.name?.split(" ")[0] || "there"}?
-                  </div>
-                </Link>
-                <Button
-                  as={Link}
-                  to="/create-post"
-                  className="btn-primary-custom d-flex align-items-center gap-1.5 text-decoration-none px-3 py-2 rounded-pill shadow-sm"
-                  size="sm"
-                >
-                  <FiPlusSquare /> <span className="d-none d-sm-inline">Post</span>
-                </Button>
-              </div>
-
-              {/* Action Triggers: Photo, Poll, Link, Draft */}
-              <div className="d-flex align-items-center justify-content-between pt-2 border-top">
-                <div className="d-flex align-items-center gap-2">
-                  <Link
-                    to="/create-post"
-                    state={{ postType: "IMAGE" }}
-                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill hover-bg text-decoration-none"
-                  >
-                    <FiImage className="text-success" size={15} />
-                    <span className="small fw-medium">Photo</span>
-                  </Link>
-                  <Link
-                    to="/create-post"
-                    state={{ postType: "POLL" }}
-                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill hover-bg text-decoration-none"
-                  >
-                    <FiPieChart className="text-warning" size={15} />
-                    <span className="small fw-medium">Poll</span>
-                  </Link>
-                  <Link
-                    to="/create-post"
-                    state={{ postType: "LINK" }}
-                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill hover-bg text-decoration-none"
-                  >
-                    <FiLink className="text-info" size={15} />
-                    <span className="small fw-medium">Link</span>
-                  </Link>
-                </div>
-                {localStorage.getItem("posthub_draft") && (
-                  <Link
-                    to="/create-post"
-                    className="btn btn-sm btn-ghost text-muted d-flex align-items-center gap-1 px-2 py-1 rounded-pill hover-bg text-decoration-none small"
-                    title="You have a saved draft"
-                  >
-                    <FiFileText size={13} className="text-primary" />
-                    <span className="small text-primary fw-medium">Draft</span>
-                  </Link>
-                )}
-              </div>
+          {/* Center Column: Main Community Feed */}
+          <section className="feed-stream-column">
+            {/* Compact Header */}
+            <div className="feed-header mb-3">
+              <h1 className="feed-title h4 fw-bold mb-1 text-body">Home Feed</h1>
+              <p className="feed-subtitle text-muted small mb-0">
+                Discover conversations, ideas, and creators worth following.
+              </p>
             </div>
 
-            {/* Social Feed Tabs */}
-            <div className="d-flex justify-content-between align-items-center border-bottom mb-3 pb-1">
-              <Nav variant="underline" className="feed-nav-tabs gap-2">
-                <Nav.Item>
-                  <Nav.Link
-                    active={feedTab === "forYou"}
-                    onClick={() => setFeedTab("forYou")}
-                    className="d-flex align-items-center gap-1 cursor-pointer py-2 px-3 fw-semibold"
-                  >
-                    <FiCompass /> For You
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link
-                    active={feedTab === "following"}
-                    onClick={() => setFeedTab("following")}
-                    className="d-flex align-items-center gap-1 cursor-pointer py-2 px-3 fw-semibold"
-                  >
-                    <FiUsers /> Following
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link
-                    active={feedTab === "trending"}
-                    onClick={() => setFeedTab("trending")}
-                    className="d-flex align-items-center gap-1 cursor-pointer py-2 px-3 fw-semibold text-danger"
-                  >
-                    <FiTrendingUp /> Trending
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link
-                    active={feedTab === "latest"}
-                    onClick={() => setFeedTab("latest")}
-                    className="d-flex align-items-center gap-1 cursor-pointer py-2 px-3 fw-semibold"
-                  >
-                    <FiClock /> Latest
-                  </Nav.Link>
-                </Nav.Item>
-              </Nav>
+            {/* Premium Inline Composer */}
+            <div className="mb-3">
+              <Composer user={user} onPostCreated={handlePostCreated} />
+            </div>
 
-              {/* Optional Sort Dropdown */}
-              <div className="d-none d-sm-flex align-items-center gap-1.5">
-                <label htmlFor="feedSortSelect" className="text-muted small mb-0">
-                  <FiFilter />
+            {/* Social Feed Tabs — Unified Single Row Control with Integrated Sort */}
+            <div className="feed-tabs-container mb-3">
+              <div className="feed-tabs-scroll" role="tablist" aria-label="Feed filters">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={feedTab === "forYou"}
+                  className={`feed-tab-btn ${feedTab === "forYou" ? "active" : ""}`}
+                  onClick={() => setFeedTab("forYou")}
+                >
+                  <FiCompass size={15} /> <span>For You</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={feedTab === "following"}
+                  className={`feed-tab-btn ${feedTab === "following" ? "active" : ""}`}
+                  onClick={() => setFeedTab("following")}
+                >
+                  <FiUsers size={15} /> <span>Following</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={feedTab === "trending"}
+                  className={`feed-tab-btn ${feedTab === "trending" ? "active" : ""}`}
+                  onClick={() => setFeedTab("trending")}
+                >
+                  <FiTrendingUp size={15} /> <span>Trending</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={feedTab === "latest"}
+                  className={`feed-tab-btn ${feedTab === "latest" ? "active" : ""}`}
+                  onClick={() => setFeedTab("latest")}
+                >
+                  <FiClock size={15} /> <span>Latest</span>
+                </button>
+              </div>
+
+              {/* Integrated Sort Dropdown */}
+              <div className="feed-filter-area d-flex align-items-center gap-1.5 ms-auto">
+                <label htmlFor="feedSortSelect" className="text-muted small mb-0 d-none d-sm-inline" aria-label="Sort options">
+                  <FiFilter size={13} />
                 </label>
                 <Form.Select
                   id="feedSortSelect"
                   size="sm"
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
-                  style={{ width: "135px" }}
+                  className="feed-sort-select"
                   aria-label="Sort posts"
                 >
                   <option value="latest">Latest</option>
@@ -278,41 +223,62 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="mb-4">
-              <InputGroup size="sm">
-                <InputGroup.Text id="search-addon">
-                  {searching ? (
-                    <Spinner size="sm" animation="border" variant="primary" style={{ width: 14, height: 14 }} />
-                  ) : (
-                    <FiSearch className="text-muted" />
-                  )}
-                </InputGroup.Text>
-                <Form.Control
+            {/* Compact Search Bar */}
+            <div className="mb-3">
+              <div className="search-bar-wrapper d-flex align-items-center px-3 py-1.5">
+                {searching ? (
+                  <Spinner size="sm" animation="border" variant="primary" style={{ width: 14, height: 14 }} className="me-2" />
+                ) : (
+                  <FiSearch className="text-muted me-2" size={14} />
+                )}
+                <input
                   type="text"
+                  className="search-bar-input flex-grow-1 bg-transparent border-0 text-body"
                   placeholder="Search posts by keyword or author..."
                   value={search}
                   onChange={handleSearchChange}
                   aria-label="Search posts"
-                  aria-describedby="search-addon"
                 />
                 {search && (
-                  <Button variant="outline-secondary" onClick={handleClearSearch} title="Clear search">
+                  <button
+                    type="button"
+                    className="btn btn-sm text-muted p-0 border-0 ms-1"
+                    onClick={handleClearSearch}
+                    title="Clear search"
+                    aria-label="Clear search"
+                  >
                     ✕
-                  </Button>
+                  </button>
                 )}
-              </InputGroup>
+              </div>
             </div>
 
-            {/* Feed Content */}
-            {loading ? (
-              <div>
+            {/* Feed Content Stream */}
+            {feedError ? (
+              <div className="text-center py-5 px-3 rounded-4 bg-card border shadow-sm">
+                <div className="text-danger mb-2">
+                  <FiAlertCircle size={36} />
+                </div>
+                <h5 className="fw-bold mb-1 text-body">Something went wrong</h5>
+                <p className="text-muted small mb-3">We couldn't load your feed. Please check your connection.</p>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="rounded-pill px-4"
+                  onClick={() => fetchFeed(1, search, sort, feedTab, false)}
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : loading ? (
+              <div className="feed-skeletons d-flex flex-column gap-3">
                 <PostSkeleton />
                 <PostSkeleton />
                 <PostSkeleton />
               </div>
             ) : posts.length === 0 ? (
               <EmptyState
+                icon={feedTab === "following" ? <FiUsers size={36} /> : search ? <FiSearch size={36} /> : <FiCompass size={36} />}
                 title={
                   feedTab === "following"
                     ? "No posts from creators you follow"
@@ -331,7 +297,7 @@ export default function Dashboard() {
                 actionLink={feedTab === "following" ? "/explore" : "/create-post"}
               />
             ) : (
-              <div className="feed-stream">
+              <div className="feed-stream d-flex flex-column gap-3">
                 {posts.map((post) => (
                   <PostCard
                     key={post._id}
@@ -343,10 +309,10 @@ export default function Dashboard() {
 
                 {/* Pagination / Infinite Scroll Trigger */}
                 {pagination.hasNextPage ? (
-                  <div className="text-center py-4">
+                  <div className="text-center py-3">
                     <Button
                       variant="outline-primary"
-                      className="px-4 py-2 rounded-pill fw-medium"
+                      className="px-4 py-1.5 rounded-pill fw-medium small"
                       onClick={handleLoadMore}
                       disabled={loadingMore}
                     >
@@ -362,20 +328,20 @@ export default function Dashboard() {
                     </Button>
                   </div>
                 ) : posts.length > 5 ? (
-                  <div className="text-center py-4 text-muted small d-flex align-items-center justify-content-center gap-1">
+                  <div className="text-center py-3 text-muted small d-flex align-items-center justify-content-center gap-1">
                     <FiCheckCircle size={14} className="text-success" /> You've caught up with all posts.
                   </div>
                 ) : null}
               </div>
             )}
-          </div>
+          </section>
 
           {/* Right Column: Trending & Suggestions Widgets (Desktop >= xl) */}
-          <div className="col-xl-3 d-none d-xl-block">
+          <aside className="d-none d-xl-block">
             <RightWidgets />
-          </div>
+          </aside>
         </div>
-      </Container>
+      </div>
     </main>
   );
 }

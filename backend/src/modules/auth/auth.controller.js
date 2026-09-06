@@ -83,27 +83,35 @@ export const logoutAllController = async (req, res, next) => {
 export const getProfileController = async (req, res, next) => {
   try {
     const user = req.user;
-    const postsCount = await Post.countDocuments({ user: user._id, isDeleted: false });
+    let postsCount = 0;
+    let likesReceived = 0;
+    let commentsReceived = 0;
 
-    const stats = await Post.aggregate([
-      { $match: { user: user._id, isDeleted: false } },
-      {
-        $project: {
-          likesCount: { $ifNull: ["$likesCount", { $size: { $ifNull: ["$likes", []] } }] },
-          commentsCount: { $ifNull: ["$commentsCount", { $size: { $ifNull: ["$comments", []] } }] },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalLikes: { $sum: "$likesCount" },
-          totalComments: { $sum: "$commentsCount" },
-        },
-      },
-    ]);
+    try {
+      postsCount = await Post.countDocuments({ user: user._id, isDeleted: false });
 
-    const likesReceived = stats[0]?.totalLikes || 0;
-    const commentsReceived = stats[0]?.totalComments || 0;
+      const stats = await Post.aggregate([
+        { $match: { user: user._id, isDeleted: false } },
+        {
+          $project: {
+            likesCount: { $ifNull: ["$likesCount", { $size: { $ifNull: ["$likes", []] } }] },
+            commentsCount: { $ifNull: ["$commentsCount", { $size: { $ifNull: ["$comments", []] } }] },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalLikes: { $sum: "$likesCount" },
+            totalComments: { $sum: "$commentsCount" },
+          },
+        },
+      ]);
+
+      likesReceived = stats[0]?.totalLikes || 0;
+      commentsReceived = stats[0]?.totalComments || 0;
+    } catch (statErr) {
+      // Non-fatal fallback for stats calculation
+    }
 
     sendResponse(res, {
       statusCode: 200,

@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Container, Row, Col, Form, InputGroup, Button, Badge, Spinner, Nav } from "react-bootstrap";
+import { Container, Row, Col, Button, Badge, Spinner } from "react-bootstrap";
 import { 
   FiSearch, 
-  FiCompass, 
   FiTag, 
   FiUsers, 
   FiTrendingUp, 
   FiUserPlus, 
   FiUserCheck, 
-  FiCheckCircle 
+  FiCheckCircle,
+  FiAlertCircle
 } from "react-icons/fi";
 import { getTrendingPosts, getTrendingHashtags, getPostsByHashtag, globalSearch } from "../services/explore";
 import { getSuggestions, followUser, unfollowUser } from "../services/users";
@@ -17,8 +17,8 @@ import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import PostCard from "../components/PostCard";
 import PostSkeleton from "../components/PostSkeleton";
-import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
+import PageHeader from "../components/PageHeader";
 
 export default function Explore() {
   const { user: currentUser } = useUser();
@@ -37,6 +37,7 @@ export default function Explore() {
   const [searchResults, setSearchResults] = useState(null);
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [searching, setSearching] = useState(false);
   const searchTimeout = useRef(null);
 
@@ -44,12 +45,16 @@ export default function Explore() {
   useEffect(() => {
     const loadSidebarData = async () => {
       try {
-        const [tagsRes, usersRes] = await Promise.all([
+        const [tagsRes, usersRes] = await Promise.allSettled([
           getTrendingHashtags(8),
           currentUser ? getSuggestions(5) : Promise.resolve({ data: { data: [] } }),
         ]);
-        setTrendingTags(tagsRes.data?.data || []);
-        setSuggestedUsers(usersRes.data?.data || []);
+        if (tagsRes.status === "fulfilled") {
+          setTrendingTags(tagsRes.value.data?.data || []);
+        }
+        if (usersRes.status === "fulfilled") {
+          setSuggestedUsers(usersRes.value.data?.data || []);
+        }
       } catch {
         // Silently ignore
       }
@@ -60,6 +65,7 @@ export default function Explore() {
   // Load posts based on tab
   const loadPosts = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       if (activeTab === "hashtag" && currentTag) {
         const res = await getPostsByHashtag(currentTag);
@@ -69,6 +75,7 @@ export default function Explore() {
         setTrendingPosts(res.data?.data?.posts || []);
       }
     } catch {
+      setError(true);
       setTrendingPosts([]);
     } finally {
       setLoading(false);
@@ -165,71 +172,101 @@ export default function Explore() {
   };
 
   return (
-    <main className="explore-page py-4">
-      <Container>
-        {/* Top Search Bar */}
-        <div className="mx-auto mb-4" style={{ maxWidth: "680px" }}>
-          <InputGroup size="lg" className="shadow-sm rounded-pill overflow-hidden border">
-            <InputGroup.Text className="bg-body border-0 ps-3">
-              {searching ? (
-                <Spinner size="sm" animation="border" variant="primary" />
-              ) : (
-                <FiSearch className="text-muted" size={18} />
-              )}
-            </InputGroup.Text>
-            <Form.Control
-              type="text"
-              placeholder="Search creators, topics, or hashtags..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="border-0 bg-body shadow-none explore-search-input"
-              aria-label="Search creators, topics, or hashtags"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                className="border-0 bg-body pe-3 text-muted"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSearchResults(null);
-                }}
-                aria-label="Clear search"
-              >
-                ✕
-              </Button>
-            )}
-          </InputGroup>
+    <main className="explore-page py-4 page-enter-animate">
+      <Container style={{ maxWidth: "1200px" }}>
+        {/* Unified Page Header */}
+        <PageHeader
+          title="Explore"
+          description="Discover conversations, creators, and ideas worth following."
+        />
+
+        {/* Top Prominent Search Bar */}
+        <div className="search-bar-wrapper d-flex align-items-center px-3 py-2 mb-4 mx-auto" style={{ maxWidth: "720px" }}>
+          {searching ? (
+            <Spinner size="sm" animation="border" variant="primary" style={{ width: 16, height: 16 }} className="me-2.5 flex-shrink-0" />
+          ) : (
+            <FiSearch className="text-muted me-2.5 flex-shrink-0" size={16} />
+          )}
+          <input
+            type="text"
+            placeholder="Search creators, topics, or hashtags..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="search-bar-input flex-grow-1 bg-transparent border-0 text-body"
+            aria-label="Search creators, topics, or hashtags"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="btn btn-sm text-muted p-0 border-0 ms-1 flex-shrink-0"
+              onClick={() => {
+                setSearchQuery("");
+                setSearchResults(null);
+              }}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
         </div>
+
+        {/* Compact Filter Chips Row */}
+        {trendingTags.length > 0 && !searchResults && (
+          <div className="d-flex align-items-center gap-2 overflow-x-auto pb-2 mb-4 mx-auto no-scrollbar" style={{ maxWidth: "720px" }}>
+            <button
+              type="button"
+              className={`explore-filter-chip ${activeTab === "trending" && !currentTag ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("trending");
+                setCurrentTag("");
+                setSearchParams({});
+              }}
+            >
+              All
+            </button>
+            {trendingTags.map((t) => (
+              <button
+                key={t.tag}
+                type="button"
+                className={`explore-filter-chip ${activeTab === "hashtag" && currentTag === t.tag ? "active" : ""}`}
+                onClick={() => handleTagClick(t.tag)}
+              >
+                #{t.tag}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Live Search Results View */}
         {searchResults && (
           <div className="search-results-overlay mx-auto mb-5" style={{ maxWidth: "780px" }}>
-            <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
-              <FiSearch /> Search Results for "{searchQuery}"
+            <h5 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
+              <FiSearch className="text-primary" /> Search Results for "{searchQuery}"
             </h5>
 
             {/* Matching Users */}
             {searchResults.users && searchResults.users.length > 0 && (
               <div className="mb-4">
                 <h6 className="text-muted text-uppercase small fw-bold mb-2">People</h6>
-                <div className="row g-2">
+                <div className="row g-2.5">
                   {searchResults.users.map((u) => (
                     <div key={u._id} className="col-12 col-md-6">
                       <Link
                         to={`/profile/${u.username}`}
-                        className="card p-3 h-100 text-decoration-none text-body hover-shadow border"
+                        className="card p-3 h-100 text-decoration-none text-body hover-shadow border rounded-3 bg-card"
                       >
                         <div className="d-flex align-items-center gap-2.5">
                           {u.avatar ? (
                             <img src={u.avatar} alt={u.name} className="rounded-circle object-fit-cover" style={{ width: 40, height: 40 }} />
                           ) : (
-                            <div className="avatar-placeholder rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }}>
+                            <div className="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }}>
                               {(u.name || "U")[0].toUpperCase()}
                             </div>
                           )}
                           <div className="overflow-hidden">
                             <div className="fw-semibold small text-truncate d-flex align-items-center gap-1">
-                              {u.name} {u.isVerified && <FiCheckCircle className="text-primary" size={12} />}
+                              {u.name} {u.isVerified && <FiCheckCircle className="text-primary" size={13} />}
                             </div>
                             <div className="text-muted small text-truncate" style={{ fontSize: "12px" }}>@{u.username}</div>
                           </div>
@@ -251,10 +288,10 @@ export default function Explore() {
                       key={h.tag}
                       variant="outline-primary"
                       size="sm"
-                      className="rounded-pill"
+                      className="rounded-pill px-3 py-1 small fw-medium"
                       onClick={() => handleTagClick(h.tag)}
                     >
-                      #{h.tag} <Badge bg="primary" pill className="ms-1">{h.count}</Badge>
+                      #{h.tag} <Badge bg="primary" pill className="ms-1.5">{h.count}</Badge>
                     </Button>
                   ))}
                 </div>
@@ -263,8 +300,8 @@ export default function Explore() {
 
             {/* Matching Posts */}
             {searchResults.posts && searchResults.posts.length > 0 && (
-              <div>
-                <h6 className="text-muted text-uppercase small fw-bold mb-2">Posts</h6>
+              <div className="d-flex flex-column gap-3">
+                <h6 className="text-muted text-uppercase small fw-bold mb-0">Posts</h6>
                 {searchResults.posts.map((post) => (
                   <PostCard key={post._id} post={post} currentUser={currentUser} />
                 ))}
@@ -272,45 +309,69 @@ export default function Explore() {
             )}
 
             {searchResults.users?.length === 0 && searchResults.posts?.length === 0 && searchResults.hashtags?.length === 0 && (
-              <EmptyState title="No results found" description={`Nothing matched "${searchQuery}". Try another keyword.`} />
+              <EmptyState 
+                title="No results found" 
+                message={`Nothing matched "${searchQuery}". Try another keyword or explore trending topics.`}
+                actionText="Explore Trending"
+                actionLink="/explore"
+              />
             )}
           </div>
         )}
 
-        {/* Regular Explore Grid */}
+        {/* Regular Explore Two-Column Layout */}
         {!searchResults && (
           <Row className="g-4">
-            {/* Main Column */}
+            {/* Main Discovery Feed Column */}
             <Col lg={8}>
-              {/* Explore Navigation Tabs */}
-              <Nav variant="underline" className="feed-nav-tabs mb-3">
-                <Nav.Item>
-                  <Nav.Link
-                    active={activeTab === "trending"}
+              {/* Unified Feed Navigation Control */}
+              <div className="feed-tabs-container mb-3">
+                <div className="feed-tabs-scroll" role="tablist" aria-label="Explore tabs">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === "trending"}
+                    className={`feed-tab-btn ${activeTab === "trending" ? "active" : ""}`}
                     onClick={() => {
                       setActiveTab("trending");
                       setCurrentTag("");
                       setSearchParams({});
                     }}
-                    className="d-flex align-items-center gap-1 cursor-pointer py-2 px-3 fw-semibold text-danger"
                   >
-                    <FiTrendingUp /> Trending
-                  </Nav.Link>
-                </Nav.Item>
-                {currentTag && (
-                  <Nav.Item>
-                    <Nav.Link
-                      active={activeTab === "hashtag"}
-                      className="d-flex align-items-center gap-1 cursor-pointer py-2 px-3 fw-semibold text-primary"
+                    <FiTrendingUp size={15} /> <span>Trending Topics</span>
+                  </button>
+                  {currentTag && (
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={activeTab === "hashtag"}
+                      className={`feed-tab-btn ${activeTab === "hashtag" ? "active" : ""}`}
                     >
-                      <FiTag /> #{currentTag}
-                    </Nav.Link>
-                  </Nav.Item>
-                )}
-              </Nav>
+                      <FiTag size={15} /> <span>#{currentTag}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
 
-              {loading ? (
-                <div>
+              {/* Discovery Feed Stream */}
+              {error ? (
+                <div className="text-center py-5 px-3 rounded-4 bg-card border shadow-sm">
+                  <div className="text-danger mb-2">
+                    <FiAlertCircle size={36} />
+                  </div>
+                  <h5 className="fw-bold mb-1 text-body">Couldn't load Explore</h5>
+                  <p className="text-muted small mb-3">Something went wrong while loading discovery content.</p>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    className="rounded-pill px-4"
+                    onClick={loadPosts}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              ) : loading ? (
+                <div className="d-flex flex-column gap-3">
                   <PostSkeleton />
                   <PostSkeleton />
                   <PostSkeleton />
@@ -318,12 +379,12 @@ export default function Explore() {
               ) : trendingPosts.length === 0 ? (
                 <EmptyState
                   title={currentTag ? `No posts with #${currentTag}` : "No trending posts right now"}
-                  description="Be the first to post about this topic!"
+                  message="Be the first to share an insight about this topic with the community!"
                   actionText="Create Post"
                   actionLink="/create-post"
                 />
               ) : (
-                <div>
+                <div className="d-flex flex-column gap-3">
                   {trendingPosts.map((post) => (
                     <PostCard key={post._id} post={post} currentUser={currentUser} />
                   ))}
@@ -331,14 +392,14 @@ export default function Explore() {
               )}
             </Col>
 
-            {/* Sidebar Column */}
+            {/* Discovery Sidebar Widgets Column */}
             <Col lg={4}>
               {/* Trending Hashtags Widget */}
-              <div className="bg-body p-3.5 rounded-4 border shadow-sm mb-4">
-                <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
-                  <FiTrendingUp className="text-danger" /> Trending Topics
+              <div className="bg-card p-3.5 rounded-4 border shadow-sm mb-4">
+                <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
+                  <FiTrendingUp className="text-primary" /> Trending Hashtags
                 </h6>
-                <div className="d-flex flex-column gap-2">
+                <div className="d-flex flex-column gap-1.5">
                   {trendingTags.length === 0 ? (
                     <p className="text-muted small mb-0">No trending topics yet.</p>
                   ) : (
@@ -350,9 +411,13 @@ export default function Explore() {
                       >
                         <div>
                           <div className="fw-semibold small text-primary">#{tag.tag}</div>
-                          <span className="text-muted" style={{ fontSize: "11px" }}>{tag.count} {tag.count === 1 ? "post" : "posts"}</span>
+                          <span className="text-muted" style={{ fontSize: "11px" }}>
+                            {tag.count} {tag.count === 1 ? "post" : "posts"}
+                          </span>
                         </div>
-                        <Badge bg="light" text="dark" className="border">Trending</Badge>
+                        <Badge bg="primary-subtle" text="primary" className="border-0 px-2 py-1">
+                          Trending
+                        </Badge>
                       </div>
                     ))
                   )}
@@ -361,18 +426,18 @@ export default function Explore() {
 
               {/* Suggested Creators Widget */}
               {suggestedUsers.length > 0 && (
-                <div className="bg-body p-3.5 rounded-4 border shadow-sm">
-                  <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
-                    <FiUsers className="text-primary" /> Who to Follow
+                <div className="bg-card p-3.5 rounded-4 border shadow-sm">
+                  <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-body">
+                    <FiUsers className="text-primary" /> Popular Creators
                   </h6>
-                  <div className="d-flex flex-column gap-3">
+                  <div className="d-flex flex-column gap-2.5">
                     {suggestedUsers.map((u) => (
-                      <div key={u._id} className="d-flex align-items-center justify-content-between">
+                      <div key={u._id} className="d-flex align-items-center justify-content-between gap-2">
                         <Link to={`/profile/${u.username}`} className="d-flex align-items-center gap-2 text-decoration-none text-body overflow-hidden">
                           {u.avatar ? (
-                            <img src={u.avatar} alt={u.name} className="rounded-circle object-fit-cover" style={{ width: 36, height: 36 }} />
+                            <img src={u.avatar} alt={u.name} className="rounded-circle object-fit-cover flex-shrink-0" style={{ width: 36, height: 36 }} />
                           ) : (
-                            <div className="avatar-placeholder rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center small" style={{ width: 36, height: 36 }}>
+                            <div className="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center small flex-shrink-0" style={{ width: 36, height: 36 }}>
                               {(u.name || "U")[0].toUpperCase()}
                             </div>
                           )}
@@ -386,8 +451,9 @@ export default function Explore() {
                           size="sm"
                           className="rounded-pill py-0.5 px-2.5 small flex-shrink-0"
                           onClick={() => handleToggleFollow(u._id)}
+                          aria-label={u.isFollowing ? `Unfollow ${u.name}` : `Follow ${u.name}`}
                         >
-                          {u.isFollowing ? <FiUserCheck /> : <FiUserPlus />}
+                          {u.isFollowing ? <FiUserCheck size={13} /> : <FiUserPlus size={13} />}
                         </Button>
                       </div>
                     ))}

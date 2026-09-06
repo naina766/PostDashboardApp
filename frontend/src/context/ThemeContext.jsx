@@ -13,7 +13,12 @@ const resolveTheme = (pref) => {
 
 export const ThemeProvider = ({ children }) => {
   const [themePreference, setThemePreference] = useState(() => {
-    return localStorage.getItem("posthub_theme_preference") || localStorage.getItem("posthub_theme") || "system";
+    return (
+      localStorage.getItem("posthub-theme") ||
+      localStorage.getItem("posthub_theme_preference") ||
+      localStorage.getItem("posthub_theme") ||
+      "system"
+    );
   });
 
   const appliedTheme = resolveTheme(themePreference);
@@ -24,6 +29,7 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.setAttribute("data-bs-theme", current);
     localStorage.setItem("posthub_theme_preference", themePreference);
     localStorage.setItem("posthub_theme", current);
+    localStorage.setItem("posthub-theme", current);
 
     if (themePreference === "system" && window.matchMedia) {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -32,6 +38,7 @@ export const ThemeProvider = ({ children }) => {
         document.documentElement.setAttribute("data-theme", sysTheme);
         document.documentElement.setAttribute("data-bs-theme", sysTheme);
         localStorage.setItem("posthub_theme", sysTheme);
+        localStorage.setItem("posthub-theme", sysTheme);
       };
       mediaQuery.addEventListener("change", handler);
       return () => mediaQuery.removeEventListener("change", handler);

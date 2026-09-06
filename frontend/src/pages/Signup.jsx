@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Form, Button, InputGroup, Spinner } from "react-bootstrap";
+import { Form, Button, InputGroup, Spinner, Alert } from "react-bootstrap";
 import { FiUser, FiMail, FiLock, FiShare2, FiCheck, FiEye, FiEyeOff } from "react-icons/fi";
 import { signup } from "../services/auth";
 import { useToast } from "../context/ToastContext";
@@ -15,24 +15,34 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
   const { showToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return; // Prevent duplicate submissions
+
+    setServerError("");
 
     if (!form.name.trim() || !form.email.trim() || !form.password) {
-      showToast("Please fill in all required fields.", "danger");
+      const msg = "Please fill in all required fields.";
+      setServerError(msg);
+      showToast(msg, "danger");
       return;
     }
 
     if (form.password.length < 6) {
-      showToast("Password must be at least 6 characters.", "danger");
+      const msg = "Password must be at least 6 characters.";
+      setServerError(msg);
+      showToast(msg, "danger");
       return;
     }
 
     if (form.password !== form.confirmPassword) {
-      showToast("Passwords do not match. Please re-check.", "danger");
+      const msg = "Passwords do not match. Please re-check.";
+      setServerError(msg);
+      showToast(msg, "danger");
       return;
     }
 
@@ -46,10 +56,10 @@ export default function Signup() {
       showToast("Account created successfully! Please sign in.", "success");
       navigate("/login");
     } catch (err) {
-      showToast(
-        err.response?.data?.message || "Failed to create account. Please try again.",
-        "danger"
-      );
+      const errMsg =
+        err.response?.data?.message || err.message || "Failed to create account. Please try again.";
+      setServerError(errMsg);
+      showToast(errMsg, "danger");
     } finally {
       setLoading(false);
     }
@@ -67,6 +77,12 @@ export default function Signup() {
         </div>
 
         <Form onSubmit={handleSubmit}>
+          {serverError && (
+            <Alert variant="danger" className="py-2 small mb-3 border-0 shadow-sm" onClose={() => setServerError("")} dismissible>
+              {serverError}
+            </Alert>
+          )}
+
           <Form.Group className="mb-3" controlId="signupName">
             <Form.Label className="d-flex align-items-center gap-1">
               <FiUser className="text-muted" /> Full Name

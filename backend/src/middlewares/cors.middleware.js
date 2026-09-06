@@ -28,15 +28,13 @@ export function configureCors() {
         return callback(null, true);
       }
 
-      // In non-production, permit localhost origins
-      if (!isProduction && /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+      // Permit localhost origins for development & cross-testing
+      if (/^https?:\/\/localhost(:\d+)?$/.test(origin) || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) {
         return callback(null, true);
       }
 
-      // Reject unauthorized origins
-      const err = new Error(`CORS Error: Origin '${origin}' is not permitted by CORS policy.`);
-      err.status = 403;
-      return callback(err, false);
+      // Reject unauthorized origins cleanly without throwing uncaught server error
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

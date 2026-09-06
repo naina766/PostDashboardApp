@@ -10,7 +10,9 @@ export const UserProvider = ({ children }) => {
 
   const fetchUser = useCallback(async () => {
     const token = localStorage.getItem("token");
-    if (!token) {
+    if (!token || token === "undefined" || token === "null") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
       setUser(null);
       setLoading(false);
       return;
@@ -20,9 +22,11 @@ export const UserProvider = ({ children }) => {
       setUser(res.data.data || null);
     } catch (err) {
       console.error("Failed to fetch profile:", err);
-      // If token is invalid or expired, clear it
-      if (err.response?.status === 401) {
+      // If token is invalid, expired, or rejected, clear local state
+      const status = err.response?.status;
+      if (status === 401 || status === 403 || status === 500) {
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
         setUser(null);
       }
     } finally {
