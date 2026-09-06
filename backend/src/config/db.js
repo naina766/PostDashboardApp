@@ -1,4 +1,15 @@
 import mongoose from "mongoose";
+import dns from "dns";
+
+// Resolve SRV records if Node resolver on Windows defaults solely to localhost loopback
+try {
+  const currentDns = dns.getServers();
+  if (currentDns.length === 1 && currentDns[0] === "127.0.0.1") {
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
+  }
+} catch {
+  // Fallback gracefully
+}
 
 /**
  * Production-ready MongoDB Connection Manager
